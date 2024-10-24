@@ -3,6 +3,7 @@ module github.com/cloudpilot-ai/karpenter-provider-alicloud
 go 1.23
 
 require (
+	github.com/alibabacloud-go/cs-20151215/v5 v5.7.9
 	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.10
 	github.com/alibabacloud-go/ecs-20140526/v4 v4.26.4
 	github.com/alibabacloud-go/tea v1.2.2
