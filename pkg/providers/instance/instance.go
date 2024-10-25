@@ -37,6 +37,7 @@ import (
 
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator/options"
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/ack"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/imagefamily"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/vswitch"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils/alierrors"
@@ -57,26 +58,24 @@ type Provider interface {
 }
 
 type DefaultProvider struct {
-	ecsClient       *ecsclient.Client
-	region          string
-	clusterEndpoint string
+	ecsClient *ecsclient.Client
+	region    string
 
-	imageFamily imagefamily.Resolver
-
-	vSwitchProvider vswitch.Provider
+	imageFamilyResolver imagefamily.Resolver
+	vSwitchProvider     vswitch.Provider
+	ackProvider         ack.Provider
 }
 
-func NewDefaultProvider(ctx context.Context, region, clusterEndpoint string, ecsClient *ecsclient.Client,
-	imageFamily imagefamily.Resolver,
-	vSwitchProvider vswitch.Provider) *DefaultProvider {
+func NewDefaultProvider(region string, ecsClient *ecsclient.Client,
+	imageFamilyResolver imagefamily.Resolver, vSwitchProvider vswitch.Provider,
+	ackProvider ack.Provider) *DefaultProvider {
 	return &DefaultProvider{
-		ecsClient:       ecsClient,
-		region:          region,
-		clusterEndpoint: clusterEndpoint,
+		ecsClient: ecsClient,
+		region:    region,
 
-		imageFamily: imageFamily,
-
-		vSwitchProvider: vSwitchProvider,
+		imageFamilyResolver: imageFamilyResolver,
+		vSwitchProvider:     vSwitchProvider,
+		ackProvider:         ackProvider,
 	}
 }
 
@@ -387,7 +386,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 			break
 		}
 
-		vSwitchID := p.getVSwitchID(launchtemplate.InstanceTypes[i], zonalVSwitchs, requirements)
+		vSwitchID := p.getVSwitchID(launchtemplate.InstanceTypes[i], zonalVSwitchs, requirements, capacityType)
 		if vSwitchID == "" {
 			return nil, errors.New("vSwitchID not found")
 		}
@@ -409,6 +408,13 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		})
 	}
 
+	labels := lo.Assign(nodeClaim.Labels, map[string]string{karpv1.CapacityTypeLabelKey: capacityType})
+	userData, err := p.ackProvider.GetNodeRegisterScript(ctx, labels)
+	if err != nil {
+		log.FromContext(ctx).Error(err, "Failed to resolve user data for node")
+		return nil, err
+	}
+
 	createAutoProvisioningGroupRequest := &ecsclient.CreateAutoProvisioningGroupRequest{
 		RegionId:                        tea.String(p.region),
 		TotalTargetCapacity:             tea.String("1"),
@@ -420,6 +426,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		LaunchConfiguration: &ecsclient.CreateAutoProvisioningGroupRequestLaunchConfiguration{
 			ImageId:          tea.String(launchtemplate.ImageID),
 			SecurityGroupIds: launchtemplate.SecurityGroupIds,
+			UserData:         tea.String(userData),
 
 			// TODO: AutoProvisioningGroup is not compatible with SecurityGroupIds, waiting for Aliyun developers to fix it,
 			// so here we only take the first one.
@@ -456,7 +463,12 @@ func (p *DefaultProvider) checkODFallback(nodeClaim *karpv1.NodeClaim, instanceT
 	return nil
 }
 
-func (p *DefaultProvider) getVSwitchID(instanceType *cloudprovider.InstanceType, zonalVSwitchs map[string]*vswitch.VSwitch, reqs scheduling.Requirements) string {
+func (p *DefaultProvider) getVSwitchID(instanceType *cloudprovider.InstanceType,
+	zonalVSwitchs map[string]*vswitch.VSwitch, reqs scheduling.Requirements, capacityType string) string {
+	cheapestVSwitchID := ""
+	cheapestPrice := math.MaxFloat64
+
+	// For different AZ, the spot price may differ. So we need to get the cheapest vSwitch in the zone
 	for i := range instanceType.Offerings {
 		if reqs.Compatible(instanceType.Offerings[i].Requirements, scheduling.AllowUndefinedWellKnownLabels) != nil {
 			continue
@@ -465,9 +477,17 @@ func (p *DefaultProvider) getVSwitchID(instanceType *cloudprovider.InstanceType,
 		if !ok {
 			continue
 		}
-		return vswitch.ID
+		if capacityType == karpv1.CapacityTypeOnDemand {
+			return vswitch.ID
+		}
+
+		if instanceType.Offerings[i].Price < cheapestPrice {
+			cheapestVSwitchID = vswitch.ID
+			cheapestPrice = instanceType.Offerings[i].Price
+		}
 	}
-	return ""
+
+	return cheapestVSwitchID
 }
 
 type LaunchTemplate struct {
@@ -477,12 +497,14 @@ type LaunchTemplate struct {
 	SystemDisk       *v1alpha1.SystemDisk
 }
 
-func (p *DefaultProvider) EnsureAll(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim, instanceTypes []*cloudprovider.InstanceType, capacityType string, tags map[string]string) ([]*LaunchTemplate, error) {
+func (p *DefaultProvider) EnsureAll(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass,
+	nodeClaim *karpv1.NodeClaim, instanceTypes []*cloudprovider.InstanceType,
+	capacityType string, tags map[string]string) ([]*LaunchTemplate, error) {
 	imageOptions, err := p.resolveImageOptions(ctx, nodeClass, lo.Assign(nodeClaim.Labels, map[string]string{karpv1.CapacityTypeLabelKey: capacityType}), tags)
 	if err != nil {
 		return nil, err
 	}
-	resolvedLaunchTemplates, err := p.imageFamily.Resolve(ctx, nodeClass, nodeClaim, instanceTypes, capacityType, imageOptions)
+	resolvedLaunchTemplates, err := p.imageFamilyResolver.Resolve(ctx, nodeClass, nodeClaim, instanceTypes, capacityType, imageOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -526,11 +548,10 @@ func (p *DefaultProvider) resolveImageOptions(ctx context.Context, nodeClass *v1
 		return nil, fmt.Errorf("no security groups are present in the status")
 	}
 	return &imagefamily.Options{
-		ClusterName:     options.FromContext(ctx).ClusterName,
-		ClusterEndpoint: p.clusterEndpoint,
-		SecurityGroups:  nodeClass.Status.SecurityGroups,
-		Tags:            tags,
-		Labels:          labels,
-		NodeClassName:   nodeClass.Name,
+		ClusterName:    options.FromContext(ctx).ClusterName,
+		SecurityGroups: nodeClass.Status.SecurityGroups,
+		Tags:           tags,
+		Labels:         labels,
+		NodeClassName:  nodeClass.Name,
 	}, nil
 }

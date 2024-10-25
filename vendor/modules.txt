@@ -7,6 +7,9 @@ contrib.go.opencensus.io/exporter/prometheus
 # github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.5
 ## explicit; go 1.14
 github.com/alibabacloud-go/alibabacloud-gateway-spi/client
+# github.com/alibabacloud-go/cs-20151215/v5 v5.7.9
+## explicit; go 1.14
+github.com/alibabacloud-go/cs-20151215/v5/client
 # github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.10
 ## explicit; go 1.14
 github.com/alibabacloud-go/darabonba-openapi/v2/client

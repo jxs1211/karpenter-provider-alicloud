@@ -18,34 +18,22 @@ package options
 
 import (
 	"fmt"
-	"net/url"
 
 	"go.uber.org/multierr"
 )
 
 func (o Options) Validate() error {
 	return multierr.Combine(
-		o.validateEndpoint(),
 		o.validateRequiredFields(),
 	)
-}
-
-func (o Options) validateEndpoint() error {
-	if o.ClusterEndpoint == "" {
-		return nil
-	}
-	endpoint, err := url.Parse(o.ClusterEndpoint)
-	// url.Parse() will accept a lot of input without error; make
-	// sure it's a real URL
-	if err != nil || !endpoint.IsAbs() || endpoint.Hostname() == "" {
-		return fmt.Errorf("%q is not a valid cluster-endpoint URL", o.ClusterEndpoint)
-	}
-	return nil
 }
 
 func (o Options) validateRequiredFields() error {
 	if o.ClusterName == "" {
 		return fmt.Errorf("missing field, cluster-name")
+	}
+	if o.ClusterID == "" {
+		return fmt.Errorf("missing field, cluster-id")
 	}
 	return nil
 }
