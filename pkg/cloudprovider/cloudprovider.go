@@ -40,7 +40,6 @@ import (
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/resources"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/config"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
 	cloudproviderevents "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cloudprovider/events"
@@ -48,6 +47,8 @@ import (
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instancetype"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils"
 )
+
+const CloudProviderName = "alibabacloud"
 
 var _ cloudprovider.CloudProvider = (*CloudProvider)(nil)
 
@@ -229,7 +230,7 @@ func (c *CloudProvider) IsDrifted(ctx context.Context, nodeClaim *karpv1.NodeCla
 
 // Name returns the CloudProvider implementation name.
 func (c *CloudProvider) Name() string {
-	return config.CloudName
+	return CloudProviderName
 }
 
 func (c *CloudProvider) GetSupportedNodeClasses() []status.Object {
