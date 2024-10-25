@@ -16,21 +16,14 @@ limitations under the License.
 
 package imagefamily
 
-import (
-	"regexp"
-)
+import "strings"
 
-var (
-	// The format should look like aliyun_3_arm64_20G_alibase_20240819.vhd
-	alibabaCloudLinux3ImageIDRegex = regexp.MustCompile("aliyun_3_.*G_alibase_.*vhd")
-)
+type ContainerOS struct{}
 
-type AlibabaCloudLinux3 struct{}
-
-func (a *AlibabaCloudLinux3) ResolveImages(images Images) Images {
+func (c *ContainerOS) ResolveImages(images Images) Images {
 	var ret Images
 	for _, im := range images {
-		if !alibabaCloudLinux3ImageIDRegex.Match([]byte(im.ImageID)) {
+		if !strings.HasPrefix(im.Name, "ContainerOS") {
 			continue
 		}
 

@@ -115,11 +115,11 @@ type SecurityGroupSelectorTerm struct {
 type ImageSelectorTerm struct {
 	// Alias specifies which ACK image to select.
 	// Each alias consists of a family and an image version, specified as "family@version".
-	// Valid families include: AlibabaCloudLinux3,AlibabaCloudLinux2
+	// Valid families include: AlibabaCloudLinux3,ContainerOS
 	// Currently only supports version pinning to the latest image release, with that images version format (ex: "aliyun3@latest").
 	// Setting the version to latest will result in drift when a new Image is released. This is **not** recommended for production environments.
 	// +kubebuilder:validation:XValidation:message="'alias' is improperly formatted, must match the format 'family'",rule="self.matches('^[a-zA-Z0-9]*$')"
-	// +kubebuilder:validation:XValidation:message="family is not supported, must be one of the following: 'AlibabaCloudLinux3,AlibabaCloudLinux2'",rule="self.find('^[^@]+') in ['AlibabaCloudLinux3', 'AlibabaCloudLinux2']"
+	// +kubebuilder:validation:XValidation:message="family is not supported, must be one of the following: 'AlibabaCloudLinux3,ContainerOS'",rule="self.find('^[^@]+') in ['AlibabaCloudLinux3', 'ContainerOS']"
 	// +kubebuilder:validation:MaxLength=30
 	// +optional
 	Alias string `json:"alias,omitempty"`
@@ -270,7 +270,7 @@ func (in *ECSNodeClass) ImageFamily() string {
 		return ImageFamilyFromAlias(term.Alias)
 	}
 	// Unreachable: validation enforces that one of the above conditions must be met
-	return ImageFamilyCustom
+	return ""
 }
 
 // ECSNodeClassList contains a list of ECSNodeClass
