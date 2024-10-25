@@ -72,6 +72,37 @@ func NewInstance(out *ecsclient.DescribeInstancesResponseBodyInstancesInstance) 
 	}
 }
 
+func NewInstanceFromProvisioningGroup(out *ecsclient.CreateAutoProvisioningGroupResponseBodyLaunchResultsLaunchResult,
+	req *ecsclient.CreateAutoProvisioningGroupRequest, region string) *Instance {
+
+	var securityGroupIDs []string
+	if len(req.LaunchConfiguration.SecurityGroupIds) > 0 {
+		securityGroupIDs = lo.Map(req.LaunchConfiguration.SecurityGroupIds, func(securitygroup *string, _ int) string {
+			return *securitygroup
+		})
+	} else {
+		securityGroupIDs = []string{*req.LaunchConfiguration.SecurityGroupId}
+	}
+
+	tags := make(map[string]string, len(req.Tag))
+	for i := range req.Tag {
+		tags[*req.Tag[i].Key] = *req.Tag[i].Value
+	}
+
+	return &Instance{
+		CreationTime:     time.Now(), // estimate the launch time since we just launched
+		Status:           InstanceStatusPending,
+		ID:               *out.InstanceIds.InstanceId[0],
+		ImageID:          *req.LaunchConfiguration.ImageId,
+		Type:             *out.InstanceType,
+		Region:           region,
+		Zone:             *out.ZoneId,
+		CapacityType:     utils.GetCapacityTypes(*out.SpotStrategy),
+		SecurityGroupIDs: securityGroupIDs,
+		Tags:             tags,
+	}
+}
+
 func toSecurityGroupIDs(securityGroups *ecsclient.DescribeInstancesResponseBodyInstancesInstanceSecurityGroupIds) []string {
 	if securityGroups == nil {
 		return []string{}

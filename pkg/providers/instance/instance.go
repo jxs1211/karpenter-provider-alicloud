@@ -93,12 +93,12 @@ func (p *DefaultProvider) Create(ctx context.Context, nodeClass *v1alpha1.ECSNod
 		return nil, fmt.Errorf("truncating instance types, %w", err)
 	}
 	tags := getTags(ctx, nodeClass, nodeClaim)
-	launchInstance, err := p.launchInstance(ctx, nodeClass, nodeClaim, instanceTypes, tags)
+	launchInstance, createAutoProvisioningGroupRequest, err := p.launchInstance(ctx, nodeClass, nodeClaim, instanceTypes, tags)
 	if err != nil {
 		return nil, err
 	}
 
-	return p.Get(ctx, *launchInstance.InstanceIds.InstanceId[0])
+	return NewInstanceFromProvisioningGroup(launchInstance, createAutoProvisioningGroupRequest, p.region), nil
 }
 
 func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error) {
@@ -323,28 +323,28 @@ func getTags(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *k
 }
 
 func (p *DefaultProvider) launchInstance(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim, instanceTypes []*cloudprovider.InstanceType,
-	tags map[string]string) (*ecsclient.CreateAutoProvisioningGroupResponseBodyLaunchResultsLaunchResult, error) {
+	tags map[string]string) (*ecsclient.CreateAutoProvisioningGroupResponseBodyLaunchResultsLaunchResult, *ecsclient.CreateAutoProvisioningGroupRequest, error) {
 	if err := p.checkODFallback(nodeClaim, instanceTypes); err != nil {
 		log.FromContext(ctx).Error(err, "failed while checking on-demand fallback")
 	}
 	capacityType := p.getCapacityType(nodeClaim, instanceTypes)
 	zonalVSwitchs, err := p.vSwitchProvider.ZonalVSwitchesForLaunch(ctx, nodeClass, instanceTypes, capacityType)
 	if err != nil {
-		return nil, fmt.Errorf("getting vSwitches, %w", err)
+		return nil, nil, fmt.Errorf("getting vSwitches, %w", err)
 	}
 
 	createAutoProvisioningGroupRequest, err := p.getProvisioningGroup(ctx, nodeClass, nodeClaim, instanceTypes, zonalVSwitchs, capacityType, tags)
 	if err != nil {
-		return nil, fmt.Errorf("getting provisioning group, %w", err)
+		return nil, nil, fmt.Errorf("getting provisioning group, %w", err)
 	}
 
 	runtime := &util.RuntimeOptions{}
 	resp, err := p.ecsClient.CreateAutoProvisioningGroupWithOptions(createAutoProvisioningGroupRequest, runtime)
 	if err != nil {
-		return nil, fmt.Errorf("creating auto provisioning group, %w", err)
+		return nil, nil, fmt.Errorf("creating auto provisioning group, %w", err)
 	}
 
-	return resp.Body.LaunchResults.LaunchResult[0], nil
+	return resp.Body.LaunchResults.LaunchResult[0], createAutoProvisioningGroupRequest, nil
 }
 
 // getCapacityType selects spot if both constraints are flexible and there is an
@@ -401,6 +401,14 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		launchTemplateConfigs = append(launchTemplateConfigs, launchTemplateConfig)
 	}
 
+	reqTags := make([]*ecsclient.CreateAutoProvisioningGroupRequestTag, 0, len(tags))
+	for k, v := range tags {
+		reqTags = append(reqTags, &ecsclient.CreateAutoProvisioningGroupRequestTag{
+			Key:   tea.String(k),
+			Value: tea.String(v),
+		})
+	}
+
 	createAutoProvisioningGroupRequest := &ecsclient.CreateAutoProvisioningGroupRequest{
 		RegionId:                        tea.String(p.region),
 		TotalTargetCapacity:             tea.String("1"),
@@ -420,6 +428,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		SystemDiskConfig: []*ecsclient.CreateAutoProvisioningGroupRequestSystemDiskConfig{
 			{DiskCategory: launchtemplate.SystemDisk.Category},
 		},
+		Tag: reqTags,
 	}
 
 	if capacityType == karpv1.CapacityTypeSpot {
