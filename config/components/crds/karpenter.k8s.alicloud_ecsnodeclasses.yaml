@@ -196,7 +196,7 @@ spec:
                     x-kubernetes-validations:
                     - message: valid keys for systemReserved are ['cpu','memory','ephemeral-storage','pid']
                       rule: self.all(x, x=='cpu' || x=='memory' || x=='ephemeral-storage'
-                        x=='pid')
+                        || x=='pid')
                     - message: systemReserved value cannot be a negative resource
                         quantity
                       rule: self.all(x, !self[x].startsWith('-'))
@@ -265,10 +265,11 @@ spec:
                     description: Specifies whether to enable the performance burst
                       feature for the system disk
                     type: boolean
-                  category:
+                  categories:
                     description: |-
                       The category of the system disk (for example, cloud or cloud_ssd).
-                      Only one of the following: "cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd", "cloud_auto", and "cloud_essd_entry"
+                      Different ECS is compatible with different disk category, using array to maximize ECS creation success.
+                      Valid values:"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd", "cloud_auto", and "cloud_essd_entry"
                     enum:
                     - cloud
                     - cloud_efficiency
@@ -276,7 +277,9 @@ spec:
                     - cloud_essd
                     - cloud_auto
                     - cloud_essd_entry
-                    type: string
+                    items:
+                      type: string
+                    type: array
                   diskName:
                     description: |-
                       The name of the system disk.
