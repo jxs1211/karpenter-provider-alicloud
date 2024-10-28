@@ -364,35 +364,44 @@ func (p *DefaultProvider) getCapacityType(nodeClaim *karpv1.NodeClaim, instanceT
 	return karpv1.CapacityTypeOnDemand
 }
 
+// mapToInstanceTypes returns a map of ImageIDs that are the most recent on creationDate to compatible instancetypes
+func mapToInstanceTypes(instanceTypes []*cloudprovider.InstanceType, images []v1alpha1.Image) map[string]string {
+	imageIDs := map[string]string{}
+	for _, instanceType := range instanceTypes {
+		for _, img := range images {
+			if err := instanceType.Requirements.Compatible(
+				scheduling.NewNodeSelectorRequirements(img.Requirements...),
+				scheduling.AllowUndefinedWellKnownLabels,
+			); err == nil {
+				imageIDs[instanceType.Name] = img.ID
+				break
+			}
+		}
+	}
+	return imageIDs
+}
+
 func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim,
 	instanceTypes []*cloudprovider.InstanceType, zonalVSwitchs map[string]*vswitch.VSwitch, capacityType string, tags map[string]string) (*ecsclient.CreateAutoProvisioningGroupRequest, error) {
-
-	launchTemplates, err := p.EnsureAll(ctx, nodeClass, nodeClaim, instanceTypes, capacityType, tags)
-	if err != nil {
-		return nil, fmt.Errorf("getting launch templates, %w", err)
-	}
-
-	if len(launchTemplates) == 0 {
-		return nil, fmt.Errorf("no launch templates are currently available given the constraints")
-	}
-
 	requirements := scheduling.NewNodeSelectorRequirementsWithMinValues(nodeClaim.Spec.Requirements...)
-	requirements[karpv1.CapacityTypeLabelKey] = scheduling.NewRequirement(karpv1.CapacityTypeLabelKey, corev1.NodeSelectorOpIn, capacityType)
 
-	launchtemplate := launchTemplates[0]
+	instanceTypes = p.imageFamilyResolver.FilterInstanceTypesBySystemDisk(ctx, nodeClass, instanceTypes)
+	mappedImages := mapToInstanceTypes(instanceTypes, nodeClass.Status.Images)
+
+	requirements[karpv1.CapacityTypeLabelKey] = scheduling.NewRequirement(karpv1.CapacityTypeLabelKey, corev1.NodeSelectorOpIn, capacityType)
 	var launchTemplateConfigs []*ecsclient.CreateAutoProvisioningGroupRequestLaunchTemplateConfig
-	for i := range launchtemplate.InstanceTypes {
-		if i > maxInstanceTypes-1 {
+	for index, instanceType := range instanceTypes {
+		if index > maxInstanceTypes-1 {
 			break
 		}
 
-		vSwitchID := p.getVSwitchID(launchtemplate.InstanceTypes[i], zonalVSwitchs, requirements, capacityType)
+		vSwitchID := p.getVSwitchID(instanceType, zonalVSwitchs, requirements, capacityType)
 		if vSwitchID == "" {
 			return nil, errors.New("vSwitchID not found")
 		}
 
 		launchTemplateConfig := &ecsclient.CreateAutoProvisioningGroupRequestLaunchTemplateConfig{
-			InstanceType:     &launchtemplate.InstanceTypes[i].Name,
+			InstanceType:     tea.String(instanceType.Name),
 			VSwitchId:        &vSwitchID,
 			WeightedCapacity: tea.Float64(1),
 		}
@@ -415,6 +424,15 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		return nil, err
 	}
 
+	securityGroupIDs := lo.Map(nodeClass.Status.SecurityGroups, func(item v1alpha1.SecurityGroup, index int) *string {
+		return tea.String(item.ID)
+	})
+
+	systemDisk := nodeClass.Spec.SystemDisk
+	if systemDisk == nil {
+		systemDisk = imagefamily.DefaultSystemDisk.DeepCopy()
+	}
+
 	createAutoProvisioningGroupRequest := &ecsclient.CreateAutoProvisioningGroupRequest{
 		RegionId:                        tea.String(p.region),
 		TotalTargetCapacity:             tea.String("1"),
@@ -424,16 +442,16 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		ExcessCapacityTerminationPolicy: tea.String("termination"),
 		AutoProvisioningGroupType:       tea.String("instant"),
 		LaunchConfiguration: &ecsclient.CreateAutoProvisioningGroupRequestLaunchConfiguration{
-			ImageId:          tea.String(launchtemplate.ImageID),
-			SecurityGroupIds: launchtemplate.SecurityGroupIds,
+			// TODO: we should set image id for each instance types after alibabacloud supports
+			ImageId:          tea.String(mappedImages[instanceTypes[0].Name]),
+			SecurityGroupIds: securityGroupIDs,
 			UserData:         tea.String(userData),
 
 			// TODO: AutoProvisioningGroup is not compatible with SecurityGroupIds, waiting for Aliyun developers to fix it,
 			// so here we only take the first one.
-			SecurityGroupId: launchtemplate.SecurityGroupIds[0],
-		},
-		SystemDiskConfig: []*ecsclient.CreateAutoProvisioningGroupRequestSystemDiskConfig{
-			{DiskCategory: launchtemplate.SystemDisk.Category},
+			SecurityGroupId:    securityGroupIDs[0],
+			SystemDiskCategory: systemDisk.Category,
+			SystemDiskSize:     systemDisk.Size,
 		},
 		Tag: reqTags,
 	}
@@ -495,63 +513,4 @@ type LaunchTemplate struct {
 	ImageID          string
 	SecurityGroupIds []*string
 	SystemDisk       *v1alpha1.SystemDisk
-}
-
-func (p *DefaultProvider) EnsureAll(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass,
-	nodeClaim *karpv1.NodeClaim, instanceTypes []*cloudprovider.InstanceType,
-	capacityType string, tags map[string]string) ([]*LaunchTemplate, error) {
-	imageOptions, err := p.resolveImageOptions(ctx, nodeClass, lo.Assign(nodeClaim.Labels, map[string]string{karpv1.CapacityTypeLabelKey: capacityType}), tags)
-	if err != nil {
-		return nil, err
-	}
-	resolvedLaunchTemplates, err := p.imageFamilyResolver.Resolve(ctx, nodeClass, nodeClaim, instanceTypes, capacityType, imageOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	launchTemplates := make([]*LaunchTemplate, len(resolvedLaunchTemplates))
-	for i := range resolvedLaunchTemplates {
-		launchTemplates[i] = &LaunchTemplate{
-			InstanceTypes:    resolvedLaunchTemplates[i].InstanceTypes,
-			ImageID:          resolvedLaunchTemplates[i].ImageID,
-			SecurityGroupIds: lo.Map(resolvedLaunchTemplates[i].SecurityGroups, func(s v1alpha1.SecurityGroup, _ int) *string { return tea.String(s.ID) }),
-			SystemDisk: lo.Ternary(resolvedLaunchTemplates[i].SystemDisk == nil, nil, &v1alpha1.SystemDisk{
-				Category:             resolvedLaunchTemplates[i].SystemDisk.Category,
-				Size:                 resolvedLaunchTemplates[i].SystemDisk.Size,
-				DiskName:             resolvedLaunchTemplates[i].SystemDisk.DiskName,
-				PerformanceLevel:     resolvedLaunchTemplates[i].SystemDisk.PerformanceLevel,
-				AutoSnapshotPolicyID: resolvedLaunchTemplates[i].SystemDisk.AutoSnapshotPolicyID,
-				BurstingEnabled:      resolvedLaunchTemplates[i].SystemDisk.BurstingEnabled,
-			}),
-		}
-	}
-	return launchTemplates, nil
-}
-
-func (p *DefaultProvider) resolveImageOptions(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, labels, tags map[string]string) (*imagefamily.Options, error) {
-	// Remove any labels passed into userData that are prefixed with "node-restriction.kubernetes.io" or "kops.k8s.io" since the kubelet can't
-	// register the node with any labels from this domain: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction
-	for k := range labels {
-		labelDomain := karpv1.GetLabelDomain(k)
-		if strings.HasSuffix(labelDomain, corev1.LabelNamespaceNodeRestriction) || strings.HasSuffix(labelDomain, "kops.k8s.io") {
-			delete(labels, k)
-		}
-	}
-	// Relying on the status rather than an API call means that Karpenter is subject to a race
-	// condition where ECSNodeClass spec changes haven't propagated to the status once a node
-	// has launched.
-	// If a user changes their ECSNodeClass and shortly after Karpenter launches a node,
-	// in the worst case, the node could be drifted and re-created.
-	// TODO @aengeda: add status generation fields to gate node creation until the status is updated from a spec change
-	// Get constrained security groups
-	if len(nodeClass.Status.SecurityGroups) == 0 {
-		return nil, fmt.Errorf("no security groups are present in the status")
-	}
-	return &imagefamily.Options{
-		ClusterName:    options.FromContext(ctx).ClusterName,
-		SecurityGroups: nodeClass.Status.SecurityGroups,
-		Tags:           tags,
-		Labels:         labels,
-		NodeClassName:  nodeClass.Name,
-	}, nil
 }

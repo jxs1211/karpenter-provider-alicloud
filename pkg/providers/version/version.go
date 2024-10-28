@@ -19,11 +19,8 @@ package version
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/patrickmn/go-cache"
-	"github.com/samber/lo"
 	"k8s.io/apimachinery/pkg/util/version"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,11 +29,12 @@ import (
 
 const (
 	kubernetesVersionCacheKey = "kubernetesVersion"
-	// Karpenter's supported version of Kubernetes
-	// If a user runs a karpenter image on a k8s version outside the min and max,
-	// One error message will be fired to notify
-	MinK8sVersion = "1.23"
-	MaxK8sVersion = "1.30"
+	// MinK8sVersion defines the max K8s version which has tested on ack
+	// Currently the min k8s version of ack is 1.28.1-aliyun.1
+	MinK8sVersion = "1.28.9"
+	// MaxK8sVersion defines the max K8s version which has tested on ack
+	// Currently the max k8s version of ack is 1.31.1-aliyun.1
+	MaxK8sVersion = "1.31.1"
 )
 
 type Provider interface {
@@ -44,7 +42,7 @@ type Provider interface {
 }
 
 // DefaultProvider get the APIServer version. This will be initialized at start up and allows karpenter to have an understanding of the cluster version
-// for decision making. The version is cached to help reduce the amount of calls made to the API Server
+// for making decision. The version is cached to help reduce the amount of calls made to the API Server
 type DefaultProvider struct {
 	cache               *cache.Cache
 	cm                  *pretty.ChangeMonitor
@@ -67,7 +65,7 @@ func (p *DefaultProvider) Get(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	version := fmt.Sprintf("%s.%s", serverVersion.Major, strings.TrimSuffix(serverVersion.Minor, "+"))
+	version := serverVersion.String()
 	p.cache.SetDefault(kubernetesVersionCacheKey, version)
 	if p.cm.HasChanged("kubernetes-version", version) {
 		log.FromContext(ctx).WithValues("version", version).V(1).Info("discovered kubernetes version")
@@ -89,17 +87,4 @@ func validateK8sVersion(v string) error {
 	}
 
 	return nil
-}
-
-// SupportedK8sVersions returns a slice of version strings in format "major.minor" for all versions of k8s supported by
-// this version of Karpenter.
-// Note: Assumes k8s only has a single major version (1.x)
-func SupportedK8sVersions() []string {
-	minMinor := lo.Must(strconv.Atoi(strings.Split(MinK8sVersion, ".")[1]))
-	maxMinor := lo.Must(strconv.Atoi(strings.Split(MaxK8sVersion, ".")[1]))
-	versions := make([]string, 0, maxMinor-minMinor+1)
-	for i := minMinor; i <= maxMinor; i++ {
-		versions = append(versions, fmt.Sprintf("1.%d", i))
-	}
-	return versions
 }

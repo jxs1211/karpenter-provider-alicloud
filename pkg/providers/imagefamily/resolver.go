@@ -25,13 +25,9 @@ import (
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/patrickmn/go-cache"
-	"github.com/samber/lo"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
-	"sigs.k8s.io/karpenter/pkg/scheduling"
 
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
 )
@@ -82,7 +78,7 @@ func (s *InstanceTypeAvailableSystemDisk) Compatible(systemDisk string) bool {
 }
 
 type Resolver interface {
-	Resolve(context.Context, *v1alpha1.ECSNodeClass, *karpv1.NodeClaim, []*cloudprovider.InstanceType, string, *Options) ([]*LaunchTemplate, error)
+	FilterInstanceTypesBySystemDisk(context.Context, *v1alpha1.ECSNodeClass, []*cloudprovider.InstanceType) []*cloudprovider.InstanceType
 }
 
 // DefaultResolver is able to fill-in dynamic launch template parameters
@@ -102,104 +98,19 @@ func NewDefaultResolver(region string, ecsapi *ecs.Client, cache *cache.Cache) *
 	}
 }
 
-// Resolve generates launch templates using the static options and dynamically generates launch template parameters.
-// Multiple ResolvedTemplates are returned based on the instanceTypes passed in to support special Images for certain instance types like GPUs.
-func (r *DefaultResolver) Resolve(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim, instanceTypes []*cloudprovider.InstanceType, capacityType string, options *Options) ([]*LaunchTemplate, error) {
-	imageFamily := GetImageFamily(nodeClass.ImageFamily(), options)
-	if len(nodeClass.Status.Images) == 0 {
-		return nil, fmt.Errorf("no images exist given constraints")
-	}
-	if imageFamily == nil {
-		return nil, fmt.Errorf("image family not found")
-	}
-
-	instanceTypes = r.filterInstanceTypesBySystemDisk(ctx, nodeClass, instanceTypes)
-	if len(instanceTypes) == 0 {
-		return nil, fmt.Errorf("no instance types exist given system disk")
-	}
-
-	mappedImages := MapToInstanceTypes(instanceTypes, nodeClass.Status.Images)
-	if len(mappedImages) == 0 {
-		return nil, fmt.Errorf("no instance types satisfy requirements of images %v", lo.Uniq(lo.Map(nodeClass.Status.Images, func(a v1alpha1.Image, _ int) string { return a.ID })))
-	}
-	var resolvedTemplates []*LaunchTemplate
-	for imageID, instanceTypes := range mappedImages {
-		// TODO: instanceTypes group by MaxPod
-		resolved := r.resolveLaunchTemplate(nodeClass, nodeClaim, instanceTypes, capacityType, imageFamily, imageID, options)
-		resolvedTemplates = append(resolvedTemplates, resolved)
-	}
-	return resolvedTemplates, nil
-}
-
-func GetImageFamily(family string, options *Options) ImageFamily {
+func GetImageFamily(family string) ImageFamily {
 	switch family {
-	case v1alpha1.ImageFamilyCustom:
-		return &Custom{Options: options}
+	case v1alpha1.ImageFamilyContainerOS:
+		return &ContainerOS{}
 	case v1alpha1.ImageFamilyAlibabaCloudLinux3:
-		return &AlibabaCloudLinux3{Options: options}
-	case v1alpha1.ImageFamilyAlibabaCloudLinux2:
-		return &AlibabaCloudLinux2{Options: options}
+		return &AlibabaCloudLinux3{}
 	default:
 		return nil
 	}
 }
 
-// MapToInstanceTypes returns a map of ImageIDs that are the most recent on creationDate to compatible instancetypes
-func MapToInstanceTypes(instanceTypes []*cloudprovider.InstanceType, images []v1alpha1.Image) map[string][]*cloudprovider.InstanceType {
-	imageIDs := map[string][]*cloudprovider.InstanceType{}
-	for _, instanceType := range instanceTypes {
-		for _, img := range images {
-			if err := instanceType.Requirements.Compatible(
-				scheduling.NewNodeSelectorRequirements(img.Requirements...),
-				scheduling.AllowUndefinedWellKnownLabels,
-			); err == nil {
-				imageIDs[img.ID] = append(imageIDs[img.ID], instanceType)
-				break
-			}
-		}
-	}
-	return imageIDs
-}
-
-func (r *DefaultResolver) resolveLaunchTemplate(nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim, instanceTypes []*cloudprovider.InstanceType, capacityType string,
-	imageFamily ImageFamily, imageID string, options *Options) *LaunchTemplate {
-	kubeletConfig := &v1alpha1.KubeletConfiguration{}
-	if nodeClass.Spec.KubeletConfiguration != nil {
-		kubeletConfig = nodeClass.Spec.KubeletConfiguration.DeepCopy()
-	}
-
-	taints := lo.Flatten([][]corev1.Taint{
-		nodeClaim.Spec.Taints,
-		nodeClaim.Spec.StartupTaints,
-	})
-	if _, found := lo.Find(taints, func(t corev1.Taint) bool {
-		return t.MatchTaint(&karpv1.UnregisteredNoExecuteTaint)
-	}); !found {
-		taints = append(taints, karpv1.UnregisteredNoExecuteTaint)
-	}
-
-	resolved := &LaunchTemplate{
-		Options: options,
-		UserData: imageFamily.UserData(
-			kubeletConfig,
-			taints,
-			options.Labels,
-			instanceTypes,
-			nodeClass.Spec.UserData,
-		),
-		SystemDisk:    nodeClass.Spec.SystemDisk,
-		ImageID:       imageID,
-		InstanceTypes: instanceTypes,
-		CapacityType:  capacityType,
-	}
-	if resolved.SystemDisk == nil {
-		resolved.SystemDisk = imageFamily.DefaultSystemDisk()
-	}
-	return resolved
-}
-
-// todo: check system disk stock, currently only checking compatibility
-func (r *DefaultResolver) filterInstanceTypesBySystemDisk(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, instanceTypes []*cloudprovider.InstanceType) []*cloudprovider.InstanceType {
+// TODO: check system disk stock, currently only checking compatibility
+func (r *DefaultResolver) FilterInstanceTypesBySystemDisk(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, instanceTypes []*cloudprovider.InstanceType) []*cloudprovider.InstanceType {
 	r.Lock()
 	defer r.Unlock()
 

@@ -10,4 +10,4 @@ spec:
     - tags:
         karpenter.sh/discovery: "cluster-demonstration" # replace with your cluster name
   imageSelectorTerms:
-    - alias: AlibabaCloudLinux3
+    - alias: ContainerOS

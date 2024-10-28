@@ -78,8 +78,7 @@ var (
 		regexp.MustCompile(fmt.Sprintf("^%s$", regexp.QuoteMeta(TagNodeClaim))),
 	}
 	ImageFamilyAlibabaCloudLinux3                     = "AlibabaCloudLinux3"
-	ImageFamilyAlibabaCloudLinux2                     = "AlibabaCloudLinux2"
-	ImageFamilyCustom                                 = "Custom"
+	ImageFamilyContainerOS                            = "ContainerOS"
 	ResourceNVIDIAGPU             corev1.ResourceName = "nvidia.com/gpu"
 	ResourceAMDGPU                corev1.ResourceName = "amd.com/gpu"
 	ResourcePrivateIPv4Address    corev1.ResourceName = "vpc.alibabacloud.com/PrivateIPv4Address"
@@ -114,7 +113,6 @@ var (
 	AnnotationECSNodeClassHashVersion         = apis.Group + "/ecsnodeclass-hash-version"
 	AnnotationInstanceTagged                  = apis.Group + "/tagged"
 
-	TagNodeClaim             = coreapis.Group + "/nodeclaim"
-	TagManagedLaunchTemplate = apis.Group + "/cluster"
-	TagName                  = "Name"
+	TagNodeClaim = coreapis.Group + "/nodeclaim"
+	TagName      = "Name"
 )
