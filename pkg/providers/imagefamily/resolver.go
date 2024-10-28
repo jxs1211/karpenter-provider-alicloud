@@ -33,8 +33,9 @@ import (
 )
 
 var DefaultSystemDisk = v1alpha1.SystemDisk{
-	Category: tea.String("cloud_auto"),
-	Size:     tea.Int32(20),
+	// TODO: Change me, comprehensive ranking based on the pricing
+	Categories: []string{"cloud", "cloud_ssd", "cloud_efficiency", "cloud_essd", "cloud_auto", "cloud_essd_entry"},
+	Size:       tea.Int32(20),
 }
 
 // Options define the static launch template parameters
@@ -73,8 +74,14 @@ func (s *InstanceTypeAvailableSystemDisk) AddAvailableSystemDisk(systemDisks ...
 	s.availableSystemDisk.Insert(systemDisks...)
 }
 
-func (s *InstanceTypeAvailableSystemDisk) Compatible(systemDisk string) bool {
-	return s.availableSystemDisk.Has(systemDisk)
+func (s *InstanceTypeAvailableSystemDisk) Compatible(systemDisks []string) bool {
+	for sdi := range systemDisks {
+		if !s.availableSystemDisk.Has(systemDisks[sdi]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 type Resolver interface {
@@ -114,16 +121,16 @@ func (r *DefaultResolver) FilterInstanceTypesBySystemDisk(ctx context.Context, n
 	r.Lock()
 	defer r.Unlock()
 
-	if nodeClass.Spec.SystemDisk == nil || nodeClass.Spec.SystemDisk.Category == nil {
+	if nodeClass.Spec.SystemDisk == nil || nodeClass.Spec.SystemDisk.Categories == nil {
 		return instanceTypes
 	}
-	expectDiskCategory := *nodeClass.Spec.SystemDisk.Category
+	expectDiskCategories := nodeClass.Spec.SystemDisk.Categories
 
 	// TODO: make following request parallel
 	var result []*cloudprovider.InstanceType
 	for i, instanceType := range instanceTypes {
 		if availableSystemDisk, ok := r.cache.Get(instanceType.Name); ok {
-			if availableSystemDisk.(*InstanceTypeAvailableSystemDisk).Compatible(expectDiskCategory) {
+			if availableSystemDisk.(*InstanceTypeAvailableSystemDisk).Compatible(expectDiskCategories) {
 				result = append(result, instanceTypes[i])
 			}
 			continue
@@ -143,10 +150,10 @@ func (r *DefaultResolver) FilterInstanceTypesBySystemDisk(ctx context.Context, n
 			continue
 		}
 
-		if availableSystemDisk.Compatible(expectDiskCategory) {
+		if availableSystemDisk.Compatible(expectDiskCategories) {
 			result = append(result, instanceTypes[i])
 		} else {
-			log.FromContext(ctx).V(1).Info("%s is not compatible with NodeClass %s SystemDisk %s", instanceType, nodeClass.Name, expectDiskCategory)
+			log.FromContext(ctx).V(1).Info("%s is not compatible with NodeClass %s SystemDisk %v", instanceType, nodeClass.Name, expectDiskCategories)
 		}
 		r.cache.SetDefault(instanceType.Name, availableSystemDisk)
 	}
