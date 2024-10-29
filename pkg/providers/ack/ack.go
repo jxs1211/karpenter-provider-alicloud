@@ -28,10 +28,12 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
+
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
 )
 
 type Provider interface {
-	GetNodeRegisterScript(ctx context.Context, labels map[string]string) (string, error)
+	GetNodeRegisterScript(context.Context, map[string]string, *v1alpha1.KubeletConfiguration) (string, error)
 }
 
 type DefaultProvider struct {
@@ -46,7 +48,9 @@ func NewDefaultProvider(clusterID string, ackClient *ackclient.Client) *DefaultP
 	}
 }
 
-func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context, labels map[string]string) (string, error) {
+func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
+	labels map[string]string,
+	kubeletCfg *v1alpha1.KubeletConfiguration) (string, error) {
 	reqPara := &ackclient.DescribeClusterAttachScriptsRequest{
 		KeepInstanceName: tea.Bool(true),
 	}
@@ -64,12 +68,15 @@ func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context, labels map[
 		return "", err
 	}
 
-	return p.resolveUserData(s, labels), nil
+	return p.resolveUserData(s, labels, kubeletCfg), nil
 }
 
-func (p *DefaultProvider) resolveUserData(respStr string, labels map[string]string) string {
+func (p *DefaultProvider) resolveUserData(respStr string,
+	labels map[string]string,
+	kubeletCfg *v1alpha1.KubeletConfiguration) string {
 	cleanupStr := strings.ReplaceAll(respStr, "\r\n", "")
 
+	// TODO: now, the following code is quite ugly, make it clean in the future
 	// Add labels
 	labelsFormated := fmt.Sprintf("ack.aliyun.com=%s", p.clusterID)
 	for labelKey, labelValue := range labels {
@@ -77,6 +84,11 @@ func (p *DefaultProvider) resolveUserData(respStr string, labels map[string]stri
 	}
 	re := regexp.MustCompile(`--labels\s+\S+`)
 	updatedCommand := re.ReplaceAllString(cleanupStr, "--labels "+labelsFormated)
+
+	// Add kubelet config
+	cfg := fmt.Sprintf("{\"kubelet_config\":{\"maxPods\":%d}}", tea.Int32Value(kubeletCfg.MaxPods))
+	cfg = base64.StdEncoding.EncodeToString([]byte(cfg))
+	updatedCommand = fmt.Sprintf("%s --node-config %s", updatedCommand, cfg)
 
 	// Add taints
 	taint := karpv1.UnregisteredNoExecuteTaint

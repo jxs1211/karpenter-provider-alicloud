@@ -4,6 +4,11 @@ kind: NodePool
 metadata:
   name: ecsnodepool
 spec:
+  disruption:
+    budgets:
+      - nodes: 95%
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 1m
   template:
     spec:
       requirements:

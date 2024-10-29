@@ -291,7 +291,7 @@ func pods(_ context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyIn
 	case maxPods != nil:
 		count = int64(lo.FromPtr(maxPods))
 	default:
-		count = 110
+		count = v1alpha1.KubeletMaxPods
 
 	}
 	if lo.FromPtr(podsPerCore) > 0 {

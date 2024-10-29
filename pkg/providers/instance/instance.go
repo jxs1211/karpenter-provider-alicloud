@@ -116,8 +116,13 @@ func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error)
 		return nil, fmt.Errorf("failed to get instance %s", id)
 	}
 
+	// If the instance size is 0, which means it's deleted, return notfound error
+	if len(resp.Body.Instances.Instance) == 0 {
+		return nil, cloudprovider.NewNodeClaimNotFoundError(err)
+	}
+
 	if len(resp.Body.Instances.Instance) != 1 {
-		return nil, fmt.Errorf("expected a single instance, got %d", len(resp.Body.Instances.Instance))
+		return nil, fmt.Errorf("expected a single instance with id %s, got %d", id, len(resp.Body.Instances.Instance))
 	}
 
 	return NewInstance(resp.Body.Instances.Instance[0]), nil
@@ -381,6 +386,18 @@ func mapToInstanceTypes(instanceTypes []*cloudprovider.InstanceType, images []v1
 	return imageIDs
 }
 
+func resolveKubeletConfiguration(nodeClass *v1alpha1.ECSNodeClass) *v1alpha1.KubeletConfiguration {
+	kubeletConfig := nodeClass.Spec.KubeletConfiguration
+	if kubeletConfig == nil {
+		kubeletConfig = &v1alpha1.KubeletConfiguration{}
+	}
+	if kubeletConfig.MaxPods == nil {
+		kubeletConfig.MaxPods = tea.Int32(v1alpha1.KubeletMaxPods)
+	}
+
+	return kubeletConfig
+}
+
 func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim,
 	instanceTypes []*cloudprovider.InstanceType, zonalVSwitchs map[string]*vswitch.VSwitch, capacityType string, tags map[string]string) (*ecsclient.CreateAutoProvisioningGroupRequest, error) {
 	requirements := scheduling.NewNodeSelectorRequirementsWithMinValues(nodeClaim.Spec.Requirements...)
@@ -417,8 +434,9 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		})
 	}
 
+	kubeletCfg := resolveKubeletConfiguration(nodeClass)
 	labels := lo.Assign(nodeClaim.Labels, map[string]string{karpv1.CapacityTypeLabelKey: capacityType})
-	userData, err := p.ackProvider.GetNodeRegisterScript(ctx, labels)
+	userData, err := p.ackProvider.GetNodeRegisterScript(ctx, labels, kubeletCfg)
 	if err != nil {
 		log.FromContext(ctx).Error(err, "Failed to resolve user data for node")
 		return nil, err

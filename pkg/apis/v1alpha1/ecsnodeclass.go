@@ -247,11 +247,15 @@ type ECSNodeClass struct {
 	Status ECSNodeClassStatus `json:"status,omitempty"`
 }
 
-// We need to bump the ECSNodeClassHashVersion when we make an update to the ECSNodeClass CRD under these conditions:
-// 1. A field changes its default value for an existing field that is already hashed
-// 2. A field is added to the hash calculation with an already-set value
-// 3. A field is removed from the hash calculations
-const ECSNodeClassHashVersion = "v3"
+const (
+	KubeletMaxPods = 110
+
+	// We need to bump the ECSNodeClassHashVersion when we make an update to the ECSNodeClass CRD under these conditions:
+	// 1. A field changes its default value for an existing field that is already hashed
+	// 2. A field is added to the hash calculation with an already-set value
+	// 3. A field is removed from the hash calculations
+	ECSNodeClassHashVersion = "v3"
+)
 
 func (in *ECSNodeClass) Hash() string {
 	return fmt.Sprint(lo.Must(hashstructure.Hash([]interface{}{
