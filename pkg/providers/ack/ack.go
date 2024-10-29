@@ -27,6 +27,7 @@ import (
 	ackclient "github.com/alibabacloud-go/cs-20151215/v5/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 )
 
 type Provider interface {
@@ -69,14 +70,19 @@ func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context, labels map[
 func (p *DefaultProvider) resolveUserData(respStr string, labels map[string]string) string {
 	cleanupStr := strings.ReplaceAll(respStr, "\r\n", "")
 
+	// Add labels
 	labelsFormated := fmt.Sprintf("ack.aliyun.com=%s", p.clusterID)
 	for labelKey, labelValue := range labels {
 		labelsFormated = fmt.Sprintf("%s,%s=%s", labelsFormated, labelKey, labelValue)
 	}
-
 	re := regexp.MustCompile(`--labels\s+\S+`)
 	updatedCommand := re.ReplaceAllString(cleanupStr, "--labels "+labelsFormated)
 
+	// Add taints
+	taint := karpv1.UnregisteredNoExecuteTaint
+	updatedCommand = fmt.Sprintf("%s --taints %s", updatedCommand, taint.ToString())
+
+	// Add bash script header
 	finalScript := fmt.Sprintf("#!/bin/bash\n\n%s", updatedCommand)
 
 	return base64.StdEncoding.EncodeToString([]byte(finalScript))
