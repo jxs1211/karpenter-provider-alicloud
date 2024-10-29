@@ -117,7 +117,7 @@ func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error)
 	}
 
 	if len(resp.Body.Instances.Instance) != 1 {
-		return nil, fmt.Errorf("expected a single instance, %w", err)
+		return nil, fmt.Errorf("expected a single instance, got %d", len(resp.Body.Instances.Instance))
 	}
 
 	return NewInstance(resp.Body.Instances.Instance[0]), nil
@@ -128,15 +128,10 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 
 	describeInstancesRequest := &ecsclient.DescribeInstancesRequest{
 		Tag: []*ecsclient.DescribeInstancesRequestTag{
+			// TODO: add karpenter.xxx.xxx tags
 			{
-				Key: tea.String(karpv1.NodePoolLabelKey),
-			},
-			{
-				Key: tea.String(v1alpha1.LabelNodeClass),
-			},
-			{
-				Key:   tea.String("kubernetes.io/cluster"),
-				Value: tea.String(options.FromContext(ctx).ClusterName),
+				Key:   tea.String(fmt.Sprintf("kubernetes.io/cluster/%s", options.FromContext(ctx).ClusterName)),
+				Value: tea.String("owned"),
 			},
 		},
 		RegionId: p.ecsClient.RegionId,
@@ -156,14 +151,17 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 			return nil, err
 		}
 
-		if resp == nil || resp.Body == nil || resp.Body.NextToken == nil || resp.Body.Instances == nil ||
-			*resp.Body.NextToken == "" || len(resp.Body.Instances.Instance) == 0 {
+		if resp == nil || resp.Body == nil || resp.Body.NextToken == nil || resp.Body.Instances == nil || len(resp.Body.Instances.Instance) == 0 {
 			break
 		}
 
 		describeInstancesRequest.NextToken = resp.Body.NextToken
 		for i := range resp.Body.Instances.Instance {
 			instances = append(instances, NewInstance(resp.Body.Instances.Instance[i]))
+		}
+
+		if *resp.Body.NextToken == "" {
+			break
 		}
 	}
 
@@ -172,7 +170,9 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 
 func (p *DefaultProvider) Delete(ctx context.Context, id string) error {
 	deleteInstanceRequest := &ecsclient.DeleteInstanceRequest{
-		InstanceId: tea.String(id),
+		InstanceId:            tea.String(id),
+		Force:                 tea.Bool(true),
+		TerminateSubscription: tea.Bool(true),
 	}
 
 	runtime := &util.RuntimeOptions{}
@@ -409,9 +409,9 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		launchTemplateConfigs = append(launchTemplateConfigs, launchTemplateConfig)
 	}
 
-	reqTags := make([]*ecsclient.CreateAutoProvisioningGroupRequestTag, 0, len(tags))
+	reqTags := make([]*ecsclient.CreateAutoProvisioningGroupRequestLaunchConfigurationTag, 0, len(tags))
 	for k, v := range tags {
-		reqTags = append(reqTags, &ecsclient.CreateAutoProvisioningGroupRequestTag{
+		reqTags = append(reqTags, &ecsclient.CreateAutoProvisioningGroupRequestLaunchConfigurationTag{
 			Key:   tea.String(k),
 			Value: tea.String(v),
 		})
@@ -451,6 +451,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 			// so here we only take the first one.
 			SecurityGroupId: securityGroupIDs[0],
 			SystemDiskSize:  systemDisk.Size,
+			Tag:             reqTags,
 		},
 
 		SystemDiskConfig: lo.Map(systemDisk.Categories, func(category string, _ int) *ecsclient.CreateAutoProvisioningGroupRequestSystemDiskConfig {
@@ -458,7 +459,6 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 				DiskCategory: &category,
 			}
 		}),
-		Tag: reqTags,
 	}
 
 	if capacityType == karpv1.CapacityTypeSpot {
