@@ -19,6 +19,7 @@ package ack
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -86,8 +87,7 @@ func (p *DefaultProvider) resolveUserData(respStr string,
 	updatedCommand := re.ReplaceAllString(cleanupStr, "--labels "+labelsFormated)
 
 	// Add kubelet config
-	cfg := fmt.Sprintf("{\"kubelet_config\":{\"maxPods\":%d}}", tea.Int32Value(kubeletCfg.MaxPods))
-	cfg = base64.StdEncoding.EncodeToString([]byte(cfg))
+	cfg := convertNodeClassKubeletConfigToACKNodeConfig(kubeletCfg)
 	updatedCommand = fmt.Sprintf("%s --node-config %s", updatedCommand, cfg)
 
 	// Add taints
@@ -98,4 +98,26 @@ func (p *DefaultProvider) resolveUserData(respStr string,
 	finalScript := fmt.Sprintf("#!/bin/bash\n\n%s", updatedCommand)
 
 	return base64.StdEncoding.EncodeToString([]byte(finalScript))
+}
+
+type NodeConfig struct {
+	KubeletConfig *ACKKubeletConfig `json:"kubelet_config,omitempty"`
+}
+
+type ACKKubeletConfig struct {
+	MaxPods *int32 `json:"maxPods,omitempty"`
+}
+
+func convertNodeClassKubeletConfigToACKNodeConfig(kubeletCfg *v1alpha1.KubeletConfiguration) string {
+	cfg := &NodeConfig{
+		KubeletConfig: &ACKKubeletConfig{
+			MaxPods: kubeletCfg.MaxPods,
+		},
+	}
+
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return base64.StdEncoding.EncodeToString([]byte("{}"))
+	}
+	return base64.StdEncoding.EncodeToString(data)
 }
