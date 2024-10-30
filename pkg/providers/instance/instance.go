@@ -118,7 +118,7 @@ func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error)
 
 	// If the instance size is 0, which means it's deleted, return notfound error
 	if len(resp.Body.Instances.Instance) == 0 {
-		return nil, cloudprovider.NewNodeClaimNotFoundError(err)
+		return nil, cloudprovider.NewNodeClaimNotFoundError(fmt.Errorf("expected a single instance with id %s", id))
 	}
 
 	if len(resp.Body.Instances.Instance) != 1 {
@@ -156,7 +156,7 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 			return nil, err
 		}
 
-		if resp == nil || resp.Body == nil || resp.Body.NextToken == nil || resp.Body.Instances == nil || len(resp.Body.Instances.Instance) == 0 {
+		if resp == nil || resp.Body == nil || resp.Body.Instances == nil || len(resp.Body.Instances.Instance) == 0 {
 			break
 		}
 
@@ -165,7 +165,7 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 			instances = append(instances, NewInstance(resp.Body.Instances.Instance[i]))
 		}
 
-		if *resp.Body.NextToken == "" {
+		if resp.Body.NextToken == nil || *resp.Body.NextToken == "" {
 			break
 		}
 	}

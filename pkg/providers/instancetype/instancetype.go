@@ -174,9 +174,12 @@ func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfigur
 		// Any changes to the values passed into the NewInstanceType method will require making updates to the cache key
 		// so that Karpenter is able to cache the set of InstanceTypes based on values that alter the set of instance types
 		// !!! Important !!!
-		return NewInstanceType(ctx, i, kc, p.region,
+		return NewInstanceType(ctx, i, kc, p.region, nodeClass.Spec.SystemDisk,
 			p.createOfferings(ctx, *i.InstanceTypeId, zoneData))
 	})
+
+	// Filter out nil values
+	result = lo.Compact(result)
 
 	p.instanceTypesCache.SetDefault(key, result)
 	return result, nil
@@ -295,13 +298,16 @@ func getAllInstanceTypes(client *ecsclient.Client) ([]*ecsclient.DescribeInstanc
 			return nil, err
 		}
 
-		if resp == nil || resp.Body == nil || resp.Body.NextToken == nil || resp.Body.InstanceTypes == nil ||
-			*resp.Body.NextToken == "" || len(resp.Body.InstanceTypes.InstanceType) == 0 {
+		if resp == nil || resp.Body == nil || resp.Body.InstanceTypes == nil || len(resp.Body.InstanceTypes.InstanceType) == 0 {
 			break
 		}
 
 		describeInstanceTypesRequest.NextToken = resp.Body.NextToken
 		InstanceTypes = append(InstanceTypes, resp.Body.InstanceTypes.InstanceType...)
+
+		if resp.Body.NextToken == nil || *resp.Body.NextToken == "" {
+			break
+		}
 	}
 
 	return InstanceTypes, nil
@@ -336,6 +342,11 @@ func (p *DefaultProvider) createOfferings(_ context.Context, instanceType string
 			offerings = append(offerings, p.createOffering(zone.ID, v1beta1.CapacityTypeSpot, spotPrice, offeringAvailable))
 		}
 	}
+
+	if len(offerings) == 0 {
+		return nil
+	}
+
 	return offerings
 }
 
