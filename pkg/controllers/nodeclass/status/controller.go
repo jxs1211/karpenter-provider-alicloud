@@ -46,17 +46,17 @@ type Controller struct {
 	kubeClient client.Client
 
 	vSwitch       *VSwitch
-	securitygroup *SecurityGroup
+	securityGroup *SecurityGroup
 	image         *Image
 }
 
 func NewController(kubeClient client.Client, vSwitchProvider vswitch.Provider,
-	securitygroupProvider securitygroup.Provider, imageProvider imagefamily.Provider) *Controller {
+	securityGroupProvider securitygroup.Provider, imageProvider imagefamily.Provider) *Controller {
 	return &Controller{
 		kubeClient: kubeClient,
 
 		vSwitch:       &VSwitch{vSwitchProvider: vSwitchProvider},
-		securitygroup: &SecurityGroup{securityGroupProvider: securitygroupProvider},
+		securityGroup: &SecurityGroup{securityGroupProvider: securityGroupProvider},
 		image:         &Image{imageProvider: imageProvider},
 	}
 }
@@ -87,7 +87,7 @@ func (c *Controller) Reconcile(ctx context.Context, nodeClass *v1alpha1.ECSNodeC
 	var errs error
 	for _, reconciler := range []nodeClassStatusReconciler{
 		c.vSwitch,
-		c.securitygroup,
+		c.securityGroup,
 		c.image,
 	} {
 		res, err := reconciler.Reconcile(ctx, nodeClass)
