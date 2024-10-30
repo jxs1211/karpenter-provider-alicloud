@@ -42,7 +42,9 @@ func (v *VSwitch) Reconcile(ctx context.Context, nodeClass *v1alpha1.ECSNodeClas
 	if len(vSwitches) == 0 {
 		nodeClass.Status.VSwitches = nil
 		nodeClass.StatusConditions().SetFalse(v1alpha1.ConditionTypeVSwitchesReady, "vSwitchesNotFound", "VSwitchSelector did not match any VSwitches")
-		return reconcile.Result{}, nil
+		// If users have omitted the necessary tags and later add them, we need to reprocess the information.
+		// Returning 'ok' in this case means that the ecsnodeclass will remain in an unready state until the component is restarted.
+		return reconcile.Result{RequeueAfter: time.Second * 15}, nil
 	}
 	sort.Slice(vSwitches, func(i, j int) bool {
 		if int(*vSwitches[i].AvailableIpAddressCount) != int(*vSwitches[j].AvailableIpAddressCount) {
