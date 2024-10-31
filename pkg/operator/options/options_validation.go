@@ -35,5 +35,8 @@ func (o Options) validateRequiredFields() error {
 	if o.ClusterID == "" {
 		return fmt.Errorf("missing field, cluster-id")
 	}
+	if o.ClusterCNI == "" {
+		return fmt.Errorf("missing field, cluster-network")
+	}
 	return nil
 }

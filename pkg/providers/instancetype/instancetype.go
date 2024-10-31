@@ -54,6 +54,7 @@ type Provider interface {
 
 type DefaultProvider struct {
 	region          string
+	clusterCNI      string
 	ecsClient       *ecsclient.Client
 	vSwitchProvider vswitch.Provider
 	pricingProvider pricing.Provider
@@ -79,12 +80,13 @@ type DefaultProvider struct {
 	instanceTypesOfferingsSeqNum uint64
 }
 
-func NewDefaultProvider(region string, ecsClient *ecsclient.Client,
+func NewDefaultProvider(region, clusterCNI string, ecsClient *ecsclient.Client,
 	instanceTypesCache *cache.Cache, unavailableOfferingsCache *kcache.UnavailableOfferings,
 	pricingProvider pricing.Provider, vSwitchProvider vswitch.Provider) *DefaultProvider {
 	return &DefaultProvider{
 		ecsClient:              ecsClient,
 		region:                 region,
+		clusterCNI:             clusterCNI,
 		vSwitchProvider:        vSwitchProvider,
 		pricingProvider:        pricingProvider,
 		instanceTypesInfo:      []*ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType{},
@@ -174,8 +176,8 @@ func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfigur
 		// Any changes to the values passed into the NewInstanceType method will require making updates to the cache key
 		// so that Karpenter is able to cache the set of InstanceTypes based on values that alter the set of instance types
 		// !!! Important !!!
-		return NewInstanceType(ctx, i, kc, p.region, nodeClass.Spec.SystemDisk,
-			p.createOfferings(ctx, *i.InstanceTypeId, zoneData))
+		offers := p.createOfferings(ctx, *i.InstanceTypeId, zoneData)
+		return NewInstanceType(ctx, i, kc, p.region, nodeClass.Spec.SystemDisk, offers, p.clusterCNI)
 	})
 
 	// Filter out nil values
@@ -198,6 +200,17 @@ func (p *DefaultProvider) UpdateInstanceTypes(ctx context.Context) error {
 		log.FromContext(ctx).Error(err, "failed to get instance types")
 		return err
 	}
+	instanceTypes = lo.Filter(instanceTypes,
+		func(item *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, index int) bool {
+			switch p.clusterCNI {
+			// TODO: support other network type, please check https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/container-network/?spm=a2c4g.11186623.help-menu-85222.d_2_4_3.6d501109uQI315&scm=20140722.H_195424._.OR_help-V_1
+			case ClusterCNITypeTerway:
+				maxENIPods := (tea.Int32Value(item.EniQuantity) - 1) * tea.Int32Value(item.EniPrivateIpAddressQuantity)
+				return maxENIPods >= TerwayMinENIRequirements
+			default:
+				return true
+			}
+		})
 
 	if p.cm.HasChanged("instance-types", instanceTypes) {
 		// Only update instanceTypesSeqNun with the instance types have been changed
