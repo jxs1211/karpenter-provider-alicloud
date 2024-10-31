@@ -391,9 +391,6 @@ func resolveKubeletConfiguration(nodeClass *v1alpha1.ECSNodeClass) *v1alpha1.Kub
 	if kubeletConfig == nil {
 		kubeletConfig = &v1alpha1.KubeletConfiguration{}
 	}
-	if kubeletConfig.MaxPods == nil {
-		kubeletConfig.MaxPods = tea.Int32(v1alpha1.KubeletMaxPods)
-	}
 
 	return kubeletConfig
 }

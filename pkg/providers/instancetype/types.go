@@ -47,7 +47,11 @@ const (
 	MemoryAvailable = "memory.available"
 	NodeFSAvailable = "nodefs.available"
 
-	GiBBytesRatio = 1024 * 1024 * 1024
+	GiBBytesRatio            = 1024 * 1024 * 1024
+	TerwayMinENIRequirements = 11
+	BaseHostNetworkPods      = 3
+
+	ClusterCNITypeTerway = "terway-eniip"
 )
 
 type ZoneData struct {
@@ -55,9 +59,10 @@ type ZoneData struct {
 	Available bool
 }
 
-func NewInstanceType(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
+func NewInstanceType(ctx context.Context,
+	info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
 	kc *v1alpha1.KubeletConfiguration, region string, systemDisk *v1alpha1.SystemDisk,
-	offerings cloudprovider.Offerings) *cloudprovider.InstanceType {
+	offerings cloudprovider.Offerings, clusterCNI string) *cloudprovider.InstanceType {
 	if offerings == nil {
 		return nil
 	}
@@ -66,9 +71,9 @@ func NewInstanceType(ctx context.Context, info *ecsclient.DescribeInstanceTypesR
 		Name:         *info.InstanceTypeId,
 		Requirements: computeRequirements(info, offerings, region),
 		Offerings:    offerings,
-		Capacity:     computeCapacity(ctx, info, kc.MaxPods, kc.PodsPerCore, systemDisk),
+		Capacity:     computeCapacity(ctx, info, kc.MaxPods, kc.PodsPerCore, systemDisk, clusterCNI),
 		Overhead: &cloudprovider.InstanceTypeOverhead{
-			KubeReserved:      kubeReservedResources(cpu(info), pods(ctx, info, kc.MaxPods, kc.PodsPerCore), kc.KubeReserved),
+			KubeReserved:      kubeReservedResources(cpu(info), pods(ctx, info, kc.MaxPods, kc.PodsPerCore, clusterCNI), kc.KubeReserved),
 			SystemReserved:    systemReservedResources(kc.SystemReserved),
 			EvictionThreshold: evictionThreshold(memory(ctx, info), ephemeralStorage(systemDisk), kc.EvictionHard, kc.EvictionSoft),
 		},
@@ -170,14 +175,15 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 	return requirements
 }
 
-func computeCapacity(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
-	maxPods *int32, podsPerCore *int32, systemDisk *v1alpha1.SystemDisk) corev1.ResourceList {
+func computeCapacity(ctx context.Context,
+	info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
+	maxPods *int32, podsPerCore *int32, systemDisk *v1alpha1.SystemDisk, clusterCNI string) corev1.ResourceList {
 
 	resourceList := corev1.ResourceList{
 		corev1.ResourceCPU:              *cpu(info),
 		corev1.ResourceMemory:           *memory(ctx, info),
 		corev1.ResourceEphemeralStorage: *ephemeralStorage(systemDisk),
-		corev1.ResourcePods:             *pods(ctx, info, maxPods, podsPerCore),
+		corev1.ResourcePods:             *pods(ctx, info, maxPods, podsPerCore, clusterCNI),
 		v1alpha1.ResourceNVIDIAGPU:      *nvidiaGPUs(info),
 		v1alpha1.ResourceAMDGPU:         *amdGPUs(info),
 	}
@@ -292,14 +298,19 @@ func memory(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBo
 	return mem
 }
 
-func pods(_ context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, maxPods *int32, podsPerCore *int32) *resource.Quantity {
+func pods(_ context.Context,
+	info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
+	maxPods *int32, podsPerCore *int32, clusterCNI string) *resource.Quantity {
 	var count int64
 	switch {
 	case maxPods != nil:
 		count = int64(lo.FromPtr(maxPods))
+	// TODO: support other network type, please check https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/container-network/?spm=a2c4g.11186623.help-menu-85222.d_2_4_3.6d501109uQI315&scm=20140722.H_195424._.OR_help-V_1
+	case clusterCNI == ClusterCNITypeTerway:
+		maxENIPods := (tea.Int32Value(info.EniQuantity) - 1) * tea.Int32Value(info.EniPrivateIpAddressQuantity)
+		count = int64(maxENIPods + BaseHostNetworkPods)
 	default:
 		count = v1alpha1.KubeletMaxPods
-
 	}
 	if lo.FromPtr(podsPerCore) > 0 {
 		count = lo.Min([]int64{int64(lo.FromPtr(podsPerCore) * lo.FromPtr(info.CpuCoreCount)), count})
