@@ -36,6 +36,7 @@ import (
 
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator/options"
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/imagefamily"
 )
 
 var (
@@ -54,17 +55,22 @@ type ZoneData struct {
 	Available bool
 }
 
-func NewInstanceType(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, kc *v1alpha1.KubeletConfiguration, region string, offerings cloudprovider.Offerings) *cloudprovider.InstanceType {
+func NewInstanceType(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
+	kc *v1alpha1.KubeletConfiguration, region string, systemDisk *v1alpha1.SystemDisk,
+	offerings cloudprovider.Offerings) *cloudprovider.InstanceType {
+	if offerings == nil {
+		return nil
+	}
 
 	it := &cloudprovider.InstanceType{
 		Name:         *info.InstanceTypeId,
 		Requirements: computeRequirements(info, offerings, region),
 		Offerings:    offerings,
-		Capacity:     computeCapacity(ctx, info, kc.MaxPods, kc.PodsPerCore),
+		Capacity:     computeCapacity(ctx, info, kc.MaxPods, kc.PodsPerCore, systemDisk),
 		Overhead: &cloudprovider.InstanceTypeOverhead{
 			KubeReserved:      kubeReservedResources(cpu(info), pods(ctx, info, kc.MaxPods, kc.PodsPerCore), kc.KubeReserved),
 			SystemReserved:    systemReservedResources(kc.SystemReserved),
-			EvictionThreshold: evictionThreshold(memory(ctx, info), ephemeralStorage(info), kc.EvictionHard, kc.EvictionSoft),
+			EvictionThreshold: evictionThreshold(memory(ctx, info), ephemeralStorage(systemDisk), kc.EvictionHard, kc.EvictionSoft),
 		},
 	}
 	if it.Requirements.Compatible(scheduling.NewRequirements(scheduling.NewRequirement(corev1.LabelOSStable, corev1.NodeSelectorOpIn, string(corev1.Windows)))) == nil {
@@ -164,12 +170,13 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 	return requirements
 }
 
-func computeCapacity(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, maxPods *int32, podsPerCore *int32) corev1.ResourceList {
+func computeCapacity(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType,
+	maxPods *int32, podsPerCore *int32, systemDisk *v1alpha1.SystemDisk) corev1.ResourceList {
 
 	resourceList := corev1.ResourceList{
 		corev1.ResourceCPU:              *cpu(info),
 		corev1.ResourceMemory:           *memory(ctx, info),
-		corev1.ResourceEphemeralStorage: *ephemeralStorage(info),
+		corev1.ResourceEphemeralStorage: *ephemeralStorage(systemDisk),
 		corev1.ResourcePods:             *pods(ctx, info, maxPods, podsPerCore),
 		v1alpha1.ResourceNVIDIAGPU:      *nvidiaGPUs(info),
 		v1alpha1.ResourceAMDGPU:         *amdGPUs(info),
@@ -328,8 +335,12 @@ func getCPUManufacturer(cpuName string) string {
 	return strings.Split(cpuName, " ")[0]
 }
 
-func ephemeralStorage(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType) *resource.Quantity {
-	return resources.Quantity(fmt.Sprintf("%dG", tea.Int64Value(info.LocalStorageCapacity)))
+func ephemeralStorage(systemDisk *v1alpha1.SystemDisk) *resource.Quantity {
+	if systemDisk == nil {
+		return resources.Quantity(fmt.Sprintf("%dG", *imagefamily.DefaultSystemDisk.Size))
+	}
+
+	return resources.Quantity(fmt.Sprintf("%dG", *systemDisk.Size))
 }
 
 func privateIPv4Address(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType) *resource.Quantity {
