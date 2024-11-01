@@ -220,7 +220,6 @@ func (p *DefaultProvider) UpdateInstanceTypes(ctx context.Context) error {
 			"count", len(instanceTypes)).V(1).Info("discovered instance types")
 	}
 	p.instanceTypesInfo = instanceTypes
-
 	return nil
 }
 
