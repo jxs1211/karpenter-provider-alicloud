@@ -97,6 +97,10 @@ func (p *DefaultProvider) Create(ctx context.Context, nodeClass *v1alpha1.ECSNod
 		return nil, err
 	}
 
+	if launchInstance.InstanceIds == nil || len(launchInstance.InstanceIds.InstanceId) == 0 {
+		return nil, fmt.Errorf("failed to launch instance, code: %s, message: %s", tea.StringValue(launchInstance.ErrorCode), tea.StringValue(launchInstance.ErrorMsg))
+	}
+
 	return NewInstanceFromProvisioningGroup(launchInstance, createAutoProvisioningGroupRequest, p.region), nil
 }
 
