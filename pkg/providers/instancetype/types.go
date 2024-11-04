@@ -50,8 +50,10 @@ const (
 	GiBBytesRatio            = 1024 * 1024 * 1024
 	TerwayMinENIRequirements = 11
 	BaseHostNetworkPods      = 3
+	FlannelDefaultPods       = 256
 
-	ClusterCNITypeTerway = "terway-eniip"
+	ClusterCNITypeTerway  = "terway-eniip"
+	ClusterCNITypeFlannel = "flannel"
 )
 
 type ZoneData struct {
@@ -296,6 +298,8 @@ func pods(_ context.Context,
 	case clusterCNI == ClusterCNITypeTerway:
 		maxENIPods := (tea.Int32Value(info.EniQuantity) - 1) * tea.Int32Value(info.EniPrivateIpAddressQuantity)
 		count = int64(maxENIPods + BaseHostNetworkPods)
+	case clusterCNI == ClusterCNITypeFlannel:
+		count = int64(FlannelDefaultPods + BaseHostNetworkPods)
 	default:
 		count = v1alpha1.KubeletMaxPods
 	}
