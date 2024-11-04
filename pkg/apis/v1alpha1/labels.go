@@ -31,25 +31,17 @@ import (
 func init() {
 	karpv1.RestrictedLabelDomains = karpv1.RestrictedLabelDomains.Insert(RestrictedLabelDomains...)
 	karpv1.WellKnownLabels = karpv1.WellKnownLabels.Insert(
-		LabelInstanceHypervisor,
-		LabelInstanceEncryptionInTransitSupported,
 		LabelInstanceCategory,
 		LabelInstanceFamily,
 		LabelInstanceGeneration,
 		LabelInstanceSize,
-		LabelInstanceLocalNVME,
 		LabelInstanceCPU,
-		LabelInstanceCPUManufacturer,
+		LabelInstanceCPUModel,
 		LabelInstanceMemory,
-		LabelInstanceEBSBandwidth,
-		LabelInstanceNetworkBandwidth,
 		LabelInstanceGPUName,
 		LabelInstanceGPUManufacturer,
 		LabelInstanceGPUCount,
 		LabelInstanceGPUMemory,
-		LabelInstanceAcceleratorName,
-		LabelInstanceAcceleratorManufacturer,
-		LabelInstanceAcceleratorCount,
 		LabelTopologyZoneID,
 		corev1.LabelWindowsBuild,
 	)
@@ -79,35 +71,27 @@ var (
 	}
 	ImageFamilyAlibabaCloudLinux3                     = "AlibabaCloudLinux3"
 	ImageFamilyContainerOS                            = "ContainerOS"
+	ECSAMDCPUModelValue                               = "AMD"
+	ECSIntelCPUModelValue                             = "Intel"
 	ResourceNVIDIAGPU             corev1.ResourceName = "nvidia.com/gpu"
 	ResourceAMDGPU                corev1.ResourceName = "amd.com/gpu"
 	ResourcePrivateIPv4Address    corev1.ResourceName = "vpc.alibabacloud.com/PrivateIPv4Address"
+	ECSClusterNameTagKey                              = "ecs:ecs-cluster-name"
 
-	ECSClusterNameTagKey = "ecs:ecs-cluster-name"
-
-	LabelNodeClass = apis.Group + "/ecsnodeclass"
-
-	LabelTopologyZoneID = "topology.k8s.alicloud/zone-id"
-
-	LabelInstanceHypervisor                   = apis.Group + "/instance-hypervisor"
+	LabelNodeClass                            = apis.Group + "/ecsnodeclass"
+	LabelTopologyZoneID                       = "topology.k8s.alicloud/zone-id"
 	LabelInstanceEncryptionInTransitSupported = apis.Group + "/instance-encryption-in-transit-supported"
 	LabelInstanceCategory                     = apis.Group + "/instance-category"
 	LabelInstanceFamily                       = apis.Group + "/instance-family"
 	LabelInstanceGeneration                   = apis.Group + "/instance-generation"
-	LabelInstanceLocalNVME                    = apis.Group + "/instance-local-nvme"
 	LabelInstanceSize                         = apis.Group + "/instance-size"
 	LabelInstanceCPU                          = apis.Group + "/instance-cpu"
-	LabelInstanceCPUManufacturer              = apis.Group + "/instance-cpu-manufacturer"
+	LabelInstanceCPUModel                     = apis.Group + "/instance-cpu-model"
 	LabelInstanceMemory                       = apis.Group + "/instance-memory"
-	LabelInstanceEBSBandwidth                 = apis.Group + "/instance-ebs-bandwidth"
-	LabelInstanceNetworkBandwidth             = apis.Group + "/instance-network-bandwidth"
 	LabelInstanceGPUName                      = apis.Group + "/instance-gpu-name"
 	LabelInstanceGPUManufacturer              = apis.Group + "/instance-gpu-manufacturer"
 	LabelInstanceGPUCount                     = apis.Group + "/instance-gpu-count"
 	LabelInstanceGPUMemory                    = apis.Group + "/instance-gpu-memory"
-	LabelInstanceAcceleratorName              = apis.Group + "/instance-accelerator-name"
-	LabelInstanceAcceleratorManufacturer      = apis.Group + "/instance-accelerator-manufacturer"
-	LabelInstanceAcceleratorCount             = apis.Group + "/instance-accelerator-count"
 	AnnotationECSNodeClassHash                = apis.Group + "/ecsnodeclass-hash"
 	AnnotationClusterNameTaggedCompatability  = apis.CompatibilityGroup + "/cluster-name-tagged"
 	AnnotationECSNodeClassHashVersion         = apis.Group + "/ecsnodeclass-hash-version"
