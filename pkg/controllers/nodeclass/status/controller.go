@@ -66,7 +66,7 @@ func (c *Controller) Reconcile(ctx context.Context, nodeClass *v1alpha1.ECSNodeC
 
 	if !controllerutil.ContainsFinalizer(nodeClass, v1alpha1.TerminationFinalizer) {
 		stored := nodeClass.DeepCopy()
-		controllerutil.AddFinalizer(stored, v1alpha1.TerminationFinalizer)
+		controllerutil.AddFinalizer(nodeClass, v1alpha1.TerminationFinalizer)
 
 		// We use client.MergeFromWithOptimisticLock because patching a list with a JSON merge patch
 		// can cause races due to the fact that it fully replaces the list on a change
