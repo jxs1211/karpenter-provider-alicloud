@@ -113,22 +113,16 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 		})...),
 		// Well Known to AlibabaCloud
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCPU, corev1.NodeSelectorOpIn, fmt.Sprint(*info.CpuCoreCount)),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceCPUManufacturer, corev1.NodeSelectorOpDoesNotExist),
+		scheduling.NewRequirement(v1alpha1.LabelInstanceCPUModel, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceMemory, corev1.NodeSelectorOpIn, fmt.Sprint(*info.MemorySize)),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceEBSBandwidth, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceNetworkBandwidth, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCategory, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceFamily, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGeneration, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceLocalNVME, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceSize, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGPUName, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGPUManufacturer, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGPUCount, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGPUMemory, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceAcceleratorName, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceAcceleratorManufacturer, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceAcceleratorCount, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceEncryptionInTransitSupported, corev1.NodeSelectorOpIn, strconv.FormatBool(tea.BoolValue(info.NetworkEncryptionSupport))),
 	)
 	// Only add zone-id label when available in offerings. It may not be available if a user has upgraded from a
@@ -147,17 +141,11 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 		requirements[v1alpha1.LabelInstanceGeneration].Insert(instanceFamilyParts[3])
 	}
 	instanceTypeParts := strings.Split(*info.InstanceTypeId, ".")
-	if len(instanceTypeParts) == 2 {
-		requirements.Get(v1alpha1.LabelInstanceFamily).Insert(instanceTypeParts[1])
+	// The format is ecs.c1m1.xlarge
+	if len(instanceTypeParts) == 3 {
+		requirements.Get(v1alpha1.LabelInstanceFamily).Insert(strings.Join(instanceTypeParts[0:2], "."))
 		requirements.Get(v1alpha1.LabelInstanceSize).Insert(instanceTypeParts[2])
 	}
-
-	if info.NvmeSupport != nil && *info.NvmeSupport != "unsupported" {
-		requirements[v1alpha1.LabelInstanceLocalNVME].Insert(fmt.Sprint(info.LocalStorageCapacity))
-	}
-
-	// Network bandwidth
-	requirements[v1alpha1.LabelInstanceNetworkBandwidth].Insert(fmt.Sprint(getInstanceBandwidth(info)))
 
 	// GPU Labels
 	if info.GPUAmount != nil && *info.GPUAmount != 0 {
@@ -169,7 +157,7 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 
 	// CPU Manufacturer, valid options: intel, amd
 	if info.PhysicalProcessorModel != nil {
-		requirements.Get(v1alpha1.LabelInstanceCPUManufacturer).Insert(getCPUManufacturer(*info.PhysicalProcessorModel))
+		requirements.Get(v1alpha1.LabelInstanceCPUModel).Insert(getCPUModel(*info.PhysicalProcessorModel))
 	}
 
 	return requirements
@@ -342,8 +330,16 @@ func getGPUManufacturer(gpuName string) string {
 	return strings.Split(gpuName, " ")[0]
 }
 
-func getCPUManufacturer(cpuName string) string {
-	return strings.Split(cpuName, " ")[0]
+func getCPUModel(cpuName string) string {
+	if strings.Contains(cpuName, v1alpha1.ECSAMDCPUModelValue) {
+		return strings.ToLower(v1alpha1.ECSAMDCPUModelValue)
+	}
+	if strings.Contains(cpuName, v1alpha1.ECSIntelCPUModelValue) {
+		return strings.ToLower(v1alpha1.ECSIntelCPUModelValue)
+	}
+
+	// In other scenarios, it's necessary to show the manufacturer
+	return ""
 }
 
 func ephemeralStorage(systemDisk *v1alpha1.SystemDisk) *resource.Quantity {
