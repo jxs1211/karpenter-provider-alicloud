@@ -47,13 +47,13 @@ const (
 	MemoryAvailable = "memory.available"
 	NodeFSAvailable = "nodefs.available"
 
-	GiBBytesRatio            = 1024 * 1024 * 1024
+	GiBMiBRatio              = 1024 * 1024
 	TerwayMinENIRequirements = 11
 	BaseHostNetworkPods      = 3
 	FlannelDefaultPods       = 256
 
 	ClusterCNITypeTerway  = "terway-eniip"
-	ClusterCNITypeFlannel = "flannel"
+	ClusterCNITypeFlannel = "Flannel"
 )
 
 type ZoneData struct {
@@ -75,7 +75,7 @@ func NewInstanceType(ctx context.Context,
 		Offerings:    offerings,
 		Capacity:     computeCapacity(ctx, info, kc.MaxPods, kc.PodsPerCore, systemDisk, clusterCNI),
 		Overhead: &cloudprovider.InstanceTypeOverhead{
-			KubeReserved:      kubeReservedResources(cpu(info), pods(ctx, info, kc.MaxPods, kc.PodsPerCore, clusterCNI), kc.KubeReserved),
+			KubeReserved:      kubeReservedResources(cpu(info), kc.KubeReserved),
 			SystemReserved:    systemReservedResources(kc.SystemReserved),
 			EvictionThreshold: evictionThreshold(memory(ctx, info), ephemeralStorage(systemDisk), kc.EvictionHard, kc.EvictionSoft),
 		},
@@ -179,9 +179,10 @@ func computeCapacity(ctx context.Context,
 	return resourceList
 }
 
-func kubeReservedResources(cpus, pods *resource.Quantity, kubeReserved map[string]string) corev1.ResourceList {
+func kubeReservedResources(cpus *resource.Quantity, kubeReserved map[string]string) corev1.ResourceList {
 	resources := corev1.ResourceList{
-		corev1.ResourceMemory:           resource.MustParse(fmt.Sprintf("%dMi", (11*pods.Value())+255)),
+		// TODO: I am not sure whether these values are correct, let's figure it out latter
+		corev1.ResourceMemory:           resource.MustParse("255Mi"),
 		corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"), // default kube-reserved ephemeral-storage
 	}
 	// kube-reserved Computed from
@@ -283,7 +284,7 @@ func memory(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBo
 		return mem
 	}
 	// Account for VM overhead in calculation
-	mem.Sub(resource.MustParse(fmt.Sprintf("%dGi", int64(math.Ceil(float64(mem.Value())*options.FromContext(ctx).VMMemoryOverheadPercent/GiBBytesRatio)))))
+	mem.Sub(resource.MustParse(fmt.Sprintf("%dMi", int64(math.Ceil(float64(mem.Value())*options.FromContext(ctx).VMMemoryOverheadPercent/GiBMiBRatio)))))
 	return mem
 }
 
@@ -299,7 +300,7 @@ func pods(_ context.Context,
 		maxENIPods := (tea.Int32Value(info.EniQuantity) - 1) * tea.Int32Value(info.EniPrivateIpAddressQuantity)
 		count = int64(maxENIPods + BaseHostNetworkPods)
 	case clusterCNI == ClusterCNITypeFlannel:
-		count = int64(FlannelDefaultPods + BaseHostNetworkPods)
+		count = FlannelDefaultPods
 	default:
 		count = v1alpha1.KubeletMaxPods
 	}
