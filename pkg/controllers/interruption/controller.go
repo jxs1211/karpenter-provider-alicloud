@@ -62,7 +62,7 @@ func (c *Controller) Reconcile(ctx context.Context, node *corev1.Node) (reconcil
 	nodeConditions := node.Status.Conditions
 
 	nodeCondition, interrupted := lo.Find(nodeConditions, func(condition corev1.NodeCondition) bool {
-		return condition.Type == corev1.NodeReady && condition.Status == corev1.ConditionFalse
+		return condition.Type == ConditionTypeInstanceExpired && condition.Status == corev1.ConditionTrue
 	})
 
 	if !interrupted {
