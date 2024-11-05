@@ -44,14 +44,15 @@ import (
 type Operator struct {
 	*operator.Operator
 
-	InstanceProvider      instance.Provider
-	PricingProvider       pricing.Provider
-	VSwitchProvider       vswitch.Provider
-	SecurityGroupProvider securitygroup.Provider
-	ImageProvider         imagefamily.Provider
-	ImageResolver         imagefamily.Resolver
-	VersionProvider       version.Provider
-	InstanceTypeProvider  instancetype.Provider
+	UnavailableOfferingsCache *alicache.UnavailableOfferings
+	InstanceProvider          instance.Provider
+	PricingProvider           pricing.Provider
+	VSwitchProvider           vswitch.Provider
+	SecurityGroupProvider     securitygroup.Provider
+	ImageProvider             imagefamily.Provider
+	ImageResolver             imagefamily.Resolver
+	VersionProvider           version.Provider
+	InstanceTypeProvider      instancetype.Provider
 }
 
 func NewOperator(ctx context.Context, operator *operator.Operator) (context.Context, *Operator) {
@@ -110,13 +111,14 @@ func NewOperator(ctx context.Context, operator *operator.Operator) (context.Cont
 	return ctx, &Operator{
 		Operator: operator,
 
-		InstanceProvider:      instanceProvider,
-		PricingProvider:       pricingProvider,
-		VSwitchProvider:       vSwitchProvider,
-		SecurityGroupProvider: securityGroupProvider,
-		ImageProvider:         imageProvider,
-		ImageResolver:         imageResolver,
-		VersionProvider:       versionProvider,
-		InstanceTypeProvider:  instanceTypeProvider,
+		UnavailableOfferingsCache: unavailableOfferingsCache,
+		InstanceProvider:          instanceProvider,
+		PricingProvider:           pricingProvider,
+		VSwitchProvider:           vSwitchProvider,
+		SecurityGroupProvider:     securityGroupProvider,
+		ImageProvider:             imageProvider,
+		ImageResolver:             imageResolver,
+		VersionProvider:           versionProvider,
+		InstanceTypeProvider:      instanceTypeProvider,
 	}
 }

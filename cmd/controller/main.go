@@ -55,6 +55,7 @@ func main() {
 			op.Clock,
 			op.GetClient(),
 			op.EventRecorder,
+			op.UnavailableOfferingsCache,
 			cloudProvider,
 			op.InstanceProvider,
 			op.InstanceTypeProvider,

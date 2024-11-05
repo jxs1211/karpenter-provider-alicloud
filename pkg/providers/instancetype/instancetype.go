@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
-	"sigs.k8s.io/karpenter/pkg/apis/v1beta1"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/pretty"
@@ -342,17 +341,17 @@ func (p *DefaultProvider) createOfferings(_ context.Context, instanceType string
 		spotPrice, spotOK := p.pricingProvider.SpotPrice(instanceType, zone.ID)
 
 		if odOK {
-			isUnavailable := p.unavailableOfferings.IsUnavailable(instanceType, zone.ID, v1beta1.CapacityTypeOnDemand)
+			isUnavailable := p.unavailableOfferings.IsUnavailable(instanceType, zone.ID, karpv1.CapacityTypeOnDemand)
 			offeringAvailable := !isUnavailable && odOK && zone.Available
 
-			offerings = append(offerings, p.createOffering(zone.ID, v1beta1.CapacityTypeOnDemand, odPrice, offeringAvailable))
+			offerings = append(offerings, p.createOffering(zone.ID, karpv1.CapacityTypeOnDemand, odPrice, offeringAvailable))
 		}
 
 		if spotOK {
-			isUnavailable := p.unavailableOfferings.IsUnavailable(instanceType, zone.ID, v1beta1.CapacityTypeSpot)
+			isUnavailable := p.unavailableOfferings.IsUnavailable(instanceType, zone.ID, karpv1.CapacityTypeSpot)
 			offeringAvailable := !isUnavailable && spotOK && zone.Available
 
-			offerings = append(offerings, p.createOffering(zone.ID, v1beta1.CapacityTypeSpot, spotPrice, offeringAvailable))
+			offerings = append(offerings, p.createOffering(zone.ID, karpv1.CapacityTypeSpot, spotPrice, offeringAvailable))
 		}
 	}
 
