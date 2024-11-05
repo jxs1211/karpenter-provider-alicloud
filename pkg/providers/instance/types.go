@@ -17,6 +17,8 @@ limitations under the License.
 package instance
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	ecsclient "github.com/alibabacloud-go/ecs-20140526/v4/client"
@@ -129,4 +131,21 @@ func toTags(tags *ecsclient.DescribeInstancesResponseBodyInstancesInstanceTags) 
 	return lo.SliceToMap(tags.Tag, func(tag *ecsclient.DescribeInstancesResponseBodyInstancesInstanceTagsTag) (string, string) {
 		return *tag.TagKey, *tag.TagValue
 	})
+}
+
+type InstanceStateOperationNotSupportedError struct {
+	error
+}
+
+func NewInstanceStateOperationNotSupportedError(instanceID string) *InstanceStateOperationNotSupportedError {
+	return &InstanceStateOperationNotSupportedError{error: fmt.Errorf("instance(%s) state not supported for this operation", instanceID)}
+}
+
+func IsInstanceStateOperationNotSupportedError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var errAsInstanceStateOperationNotSupportedError *InstanceStateOperationNotSupportedError
+	return errors.As(err, &errAsInstanceStateOperationNotSupportedError)
 }

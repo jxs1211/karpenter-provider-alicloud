@@ -36,6 +36,8 @@ import (
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 	"sigs.k8s.io/karpenter/pkg/operator/injection"
+
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instance"
 )
 
 type Controller struct {
@@ -93,7 +95,14 @@ func (c *Controller) Reconcile(ctx context.Context) (reconcile.Result, error) {
 func (c *Controller) garbageCollect(ctx context.Context, nodeClaim *karpv1.NodeClaim, nodeList *corev1.NodeList) error {
 	ctx = log.IntoContext(ctx, log.FromContext(ctx).WithValues("provider-id", nodeClaim.Status.ProviderID))
 	if err := c.cloudProvider.Delete(ctx, nodeClaim); err != nil {
-		return cloudprovider.IgnoreNodeClaimNotFoundError(err)
+		// For instanceStateOperationNotSupportedError, not necessary to throw an error, this happens when you scale up
+		// one deployment, then scale down immediately. The node is in initializing state, and cloud SDK api will throw
+		// an unsupported operation error, this controller will reconcile again
+		if instance.IsInstanceStateOperationNotSupportedError(err) ||
+			cloudprovider.IsNodeClaimNotFoundError(err) {
+			return nil
+		}
+		return err
 	}
 	log.FromContext(ctx).V(1).Info("garbage collected cloudprovider instance")
 

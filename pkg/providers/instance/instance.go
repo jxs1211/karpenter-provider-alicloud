@@ -178,6 +178,16 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 }
 
 func (p *DefaultProvider) Delete(ctx context.Context, id string) error {
+	instance, err := p.Get(ctx, id)
+	if err != nil {
+		return fmt.Errorf("deleting instance, %w", err)
+	}
+
+	// For follow state, the API will return an error, let's return NotSupportedError
+	if instance.Status == InstanceStatusStarting || instance.Status == InstanceStatusPending {
+		return NewInstanceStateOperationNotSupportedError(id)
+	}
+
 	deleteInstanceRequest := &ecsclient.DeleteInstanceRequest{
 		InstanceId:            tea.String(id),
 		Force:                 tea.Bool(true),

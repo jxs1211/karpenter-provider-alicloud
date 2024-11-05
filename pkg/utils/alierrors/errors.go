@@ -18,6 +18,7 @@ package alierrors
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/alibabacloud-go/tea/tea"
 )
@@ -25,7 +26,7 @@ import (
 func IsNotFound(err error) bool {
 	var sdkError *tea.SDKError
 	if errors.As(err, &sdkError) {
-		if *sdkError.StatusCode == 404 {
+		if *sdkError.StatusCode == http.StatusNotFound {
 			return true
 		}
 	}
