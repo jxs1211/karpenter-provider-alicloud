@@ -98,9 +98,9 @@ func (c *Controller) Register(_ context.Context, m manager.Manager) error {
 
 func (c *Controller) tagInstance(ctx context.Context, nc *karpv1.NodeClaim, id string) error {
 	tags := map[string]string{
-		v1alpha1.TagName:              nc.Status.NodeName,
-		v1alpha1.TagNodeClaim:         nc.Name,
-		v1alpha1.ECSClusterNameTagKey: options.FromContext(ctx).ClusterName,
+		v1alpha1.TagName:            nc.Status.NodeName,
+		v1alpha1.TagNodeClaim:       nc.Name,
+		v1alpha1.ECSClusterIDTagKey: options.FromContext(ctx).ClusterID,
 	}
 
 	// Remove tags which have been already populated

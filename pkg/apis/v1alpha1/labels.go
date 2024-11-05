@@ -62,10 +62,9 @@ var (
 	}
 	RestrictedTagPatterns = []*regexp.Regexp{
 		// Adheres to cluster name pattern matching as specified in the API spec
-		// https://docs.alicloud.amazon.com/eks/latest/APIReference/API_CreateCluster.html
 		regexp.MustCompile(`^kubernetes\.io/cluster/[0-9A-Za-z][A-Za-z0-9\-_]*$`),
 		regexp.MustCompile(fmt.Sprintf("^%s$", regexp.QuoteMeta(karpv1.NodePoolLabelKey))),
-		regexp.MustCompile(fmt.Sprintf("^%s$", regexp.QuoteMeta(ECSClusterNameTagKey))),
+		regexp.MustCompile(fmt.Sprintf("^%s$", regexp.QuoteMeta(ECSClusterIDTagKey))),
 		regexp.MustCompile(fmt.Sprintf("^%s$", regexp.QuoteMeta(LabelNodeClass))),
 		regexp.MustCompile(fmt.Sprintf("^%s$", regexp.QuoteMeta(TagNodeClaim))),
 	}
@@ -76,7 +75,7 @@ var (
 	ResourceNVIDIAGPU             corev1.ResourceName = "nvidia.com/gpu"
 	ResourceAMDGPU                corev1.ResourceName = "amd.com/gpu"
 	ResourcePrivateIPv4Address    corev1.ResourceName = "vpc.alibabacloud.com/PrivateIPv4Address"
-	ECSClusterNameTagKey                              = "ecs:ecs-cluster-name"
+	ECSClusterIDTagKey                                = "ecs:ecs-cluster-id"
 
 	LabelNodeClass                           = apis.Group + "/ecsnodeclass"
 	LabelTopologyZoneID                      = "topology.k8s.alicloud/zone-id"
