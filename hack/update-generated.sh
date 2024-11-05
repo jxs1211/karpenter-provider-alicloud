@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 # Update CRD
-controller-gen crd paths=./pkg/apis/v1alpha1/... output:crd:dir=./config/components/crds
+controller-gen crd paths=./pkg/apis/v1alpha1/... output:crd:dir=./charts/karpenter/crds
 
 # Update generated code
 export REPO_ROOT=$(pwd)

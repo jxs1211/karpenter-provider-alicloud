@@ -9,7 +9,7 @@ WITH_GOFLAGS = GOFLAGS="$(GOFLAGS)"
 ## Extra helm options
 CLUSTER_ENDPOINT ?= $(shell kubectl config view --minify -o jsonpath='{.clusters[].cluster.server}')
 # CR for local builds of Karpenter
-KARPENTER_NAMESPACE ?= kube-system
+KARPENTER_NAMESPACE ?= karpenter-system
 KARPENTER_VERSION ?= $(shell git tag --sort=committerdate | tail -1 | cut -d"v" -f2)
 # KO_DOCKER_REPO ?= ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/dev
 KO_DOCKER_REPO ?= ko.local
@@ -50,19 +50,17 @@ image: ## Build the Karpenter controller images using ko build
 	$(eval CONTROLLER_IMG=$(shell $(WITH_GOFLAGS) KOCACHE=$(KOCACHE) KO_DOCKER_REPO="$(KO_DOCKER_REPO)" ko build --bare github.com/cloudpilot-ai/karpenter-provider-alibabacloud/cmd/controller))
 	$(eval IMG_REPOSITORY=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 1 | cut -d ":" -f 1))
 	$(eval IMG_TAG=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 1 | cut -d ":" -f 2 -s))
-	$(eval IMG_DIGEST=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 2))
 
 apply: image ## Deploy the controller from the current state of your git repository into your ~/.kube/config cluster
-	kubectl apply -f ./config/components/crds/
 	helm upgrade --install karpenter charts/karpenter --namespace ${KARPENTER_NAMESPACE} \
         $(HELM_OPTS) \
         --set logLevel=debug \
         --set controller.image.repository=$(IMG_REPOSITORY) \
         --set controller.image.tag=$(IMG_TAG) \
-        --set controller.image.digest=$(IMG_DIGEST)
 
 delete: ## Delete the controller from your kubeconfig cluster
 	helm uninstall karpenter --namespace ${KARPENTER_NAMESPACE}
+	kubectl delete ns karpenter
 
 ut-test: ## Run unit tests
 	go test ./pkg/... \
