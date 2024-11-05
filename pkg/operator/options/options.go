@@ -40,6 +40,7 @@ type Options struct {
 	ClusterID               string
 	ClusterCNI              string
 	VMMemoryOverheadPercent float64
+	Interruption            bool
 }
 
 func (o *Options) AddFlags(fs *coreoptions.FlagSet) {
@@ -47,6 +48,7 @@ func (o *Options) AddFlags(fs *coreoptions.FlagSet) {
 	fs.StringVar(&o.ClusterID, "cluster-id", env.WithDefaultString("CLUSTER_ID", ""), "The external kubernetes cluster id for new nodes to connect with.")
 	fs.StringVar(&o.ClusterCNI, "cluster-cni", env.WithDefaultString("CLUSTER_CNI", "terway-eniip"), "The network cni used by the cluster.")
 	fs.Float64Var(&o.VMMemoryOverheadPercent, "vm-memory-overhead-percent", utils.WithDefaultFloat64("VM_MEMORY_OVERHEAD_PERCENT", 0.075), "The VM memory overhead as a percent that will be subtracted from the total memory for all instance types.")
+	fs.BoolVar(&o.Interruption, "interruption", env.WithDefaultBool("INTERRUPTION", true), "Enable interruption handling.")
 }
 
 func (o *Options) Parse(fs *coreoptions.FlagSet, args ...string) error {

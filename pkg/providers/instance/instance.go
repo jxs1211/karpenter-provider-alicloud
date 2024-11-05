@@ -197,7 +197,7 @@ func (p *DefaultProvider) Delete(ctx context.Context, id string) error {
 			err = multierr.Append(err, e)
 		}
 
-		return fmt.Errorf("terminating instance, %w", err)
+		return fmt.Errorf("terminating instance id: %s, %w", id, err)
 	}
 
 	return nil

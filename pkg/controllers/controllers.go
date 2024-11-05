@@ -26,6 +26,8 @@ import (
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 	"sigs.k8s.io/karpenter/pkg/events"
 
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cache"
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/interruption"
 	nodeclaimgarbagecollection "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/nodeclaim/garbagecollection"
 	nodeclaimtagging "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/nodeclaim/tagging"
 	nodeclasshash "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/nodeclass/hash"
@@ -33,6 +35,7 @@ import (
 	nodeclasstermination "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/nodeclass/termination"
 	providersinstancetype "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/providers/instancetype"
 	controllerspricing "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/providers/pricing"
+	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator/options"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/imagefamily"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instance"
 	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instancetype"
@@ -43,6 +46,7 @@ import (
 
 func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock,
 	kubeClient client.Client, recorder events.Recorder,
+	unavailableOfferings *cache.UnavailableOfferings,
 	cloudProvider cloudprovider.CloudProvider,
 	instanceProvider instance.Provider, instanceTypeProvider instancetype.Provider,
 	pricingProvider pricing.Provider,
@@ -57,6 +61,10 @@ func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock,
 		nodeclaimgarbagecollection.NewController(kubeClient, cloudProvider),
 		nodeclaimtagging.NewController(kubeClient, instanceProvider),
 		providersinstancetype.NewController(instanceTypeProvider),
+	}
+
+	if options.FromContext(ctx).Interruption {
+		controllers = append(controllers, interruption.NewController(kubeClient, recorder, unavailableOfferings))
 	}
 	return controllers
 }
