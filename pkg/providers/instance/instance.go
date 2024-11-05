@@ -139,7 +139,7 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 		Tag: []*ecsclient.DescribeInstancesRequestTag{
 			// TODO: add karpenter.xxx.xxx tags
 			{
-				Key:   tea.String(fmt.Sprintf("kubernetes.io/cluster/%s", options.FromContext(ctx).ClusterName)),
+				Key:   tea.String(fmt.Sprintf("kubernetes.io/cluster/%s", options.FromContext(ctx).ClusterID)),
 				Value: tea.String("owned"),
 			},
 		},
@@ -332,10 +332,10 @@ func filterUnwantedSpot(instanceTypes []*cloudprovider.InstanceType) []*cloudpro
 
 func getTags(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim) map[string]string {
 	staticTags := map[string]string{
-		fmt.Sprintf("kubernetes.io/cluster/%s", options.FromContext(ctx).ClusterName): "owned",
-		karpv1.NodePoolLabelKey:       nodeClaim.Labels[karpv1.NodePoolLabelKey],
-		v1alpha1.ECSClusterNameTagKey: options.FromContext(ctx).ClusterName,
-		v1alpha1.LabelNodeClass:       nodeClass.Name,
+		fmt.Sprintf("kubernetes.io/cluster/%s", options.FromContext(ctx).ClusterID): "owned",
+		karpv1.NodePoolLabelKey:     nodeClaim.Labels[karpv1.NodePoolLabelKey],
+		v1alpha1.ECSClusterIDTagKey: options.FromContext(ctx).ClusterID,
+		v1alpha1.LabelNodeClass:     nodeClass.Name,
 	}
 	return lo.Assign(nodeClass.Spec.Tags, staticTags)
 }

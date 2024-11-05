@@ -29,9 +29,6 @@ func (o Options) Validate() error {
 }
 
 func (o Options) validateRequiredFields() error {
-	if o.ClusterName == "" {
-		return fmt.Errorf("missing field, cluster-name")
-	}
 	if o.ClusterID == "" {
 		return fmt.Errorf("missing field, cluster-id")
 	}

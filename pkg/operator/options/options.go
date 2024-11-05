@@ -36,7 +36,6 @@ func init() {
 type optionsKey struct{}
 
 type Options struct {
-	ClusterName             string
 	ClusterID               string
 	ClusterCNI              string
 	VMMemoryOverheadPercent float64
@@ -44,7 +43,6 @@ type Options struct {
 }
 
 func (o *Options) AddFlags(fs *coreoptions.FlagSet) {
-	fs.StringVar(&o.ClusterName, "cluster-name", env.WithDefaultString("CLUSTER_NAME", ""), "[REQUIRED] The kubernetes cluster name for resource discovery.")
 	fs.StringVar(&o.ClusterID, "cluster-id", env.WithDefaultString("CLUSTER_ID", ""), "The external kubernetes cluster id for new nodes to connect with.")
 	fs.StringVar(&o.ClusterCNI, "cluster-cni", env.WithDefaultString("CLUSTER_CNI", "terway-eniip"), "The network cni used by the cluster.")
 	fs.Float64Var(&o.VMMemoryOverheadPercent, "vm-memory-overhead-percent", utils.WithDefaultFloat64("VM_MEMORY_OVERHEAD_PERCENT", 0.075), "The VM memory overhead as a percent that will be subtracted from the total memory for all instance types.")
