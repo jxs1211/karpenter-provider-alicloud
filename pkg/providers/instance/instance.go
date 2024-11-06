@@ -35,12 +35,12 @@ import (
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/resources"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator/options"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/ack"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/imagefamily"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/vswitch"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils/alierrors"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/operator/options"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/ack"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/imagefamily"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/vswitch"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/alierrors"
 )
 
 const (

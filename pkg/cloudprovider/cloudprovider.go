@@ -40,12 +40,12 @@ import (
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/resources"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
-	cloudproviderevents "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cloudprovider/events"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instance"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instancetype"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	cloudproviderevents "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cloudprovider/events"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instance"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instancetype"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils"
 )
 
 const CloudProviderName = "alibabacloud"

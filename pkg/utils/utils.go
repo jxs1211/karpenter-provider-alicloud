@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 )
 
-// alibabacloud ack node spec providerID format, ref: https://github.com/cloudpilot-ai/karpenter-provider-alicloud/pull/35#discussion_r1794805184
+// alibabacloud ack node spec providerID format, ref: https://github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pull/35#discussion_r1794805184
 // eg: cn-zhangjiakou.i-xxxx
 var instanceIDRegex = regexp.MustCompile(`(?P<AZ>.*)\.(?P<InstanceID>.*)`)
 

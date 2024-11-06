@@ -25,7 +25,7 @@ import (
 	"github.com/samber/lo"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils"
 )
 
 const (

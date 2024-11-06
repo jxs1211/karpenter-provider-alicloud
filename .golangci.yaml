@@ -43,7 +43,7 @@ linters-settings:
     locale: US
     ignore-words: []
   goimports:
-    local-prefixes: github.com/cloudpilot-ai/karpenter-provider-alicloud
+    local-prefixes: github.com/cloudpilot-ai/karpenter-provider-alibabacloud
   gci:
     sections:
       - standard # Standard section: captures all standard packages.

@@ -1,7 +1,7 @@
-![GitHub stars](https://img.shields.io/github/stars/cloudpilot-ai/karpenter-provider-alicloud)
-![GitHub forks](https://img.shields.io/github/forks/cloudpilot-ai/karpenter-provider-alicloud)
-[![GitHub License](https://img.shields.io/badge/License-Apache%202.0-ff69b4.svg)](https://github.com/cloudpilot-ai/karpenter-provider-alicloud/blob/main/LICENSE)
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/cloudpilot-ai/karpenter-provider-alicloud/issues)
+![GitHub stars](https://img.shields.io/github/stars/cloudpilot-ai/karpenter-provider-alibabacloud)
+![GitHub forks](https://img.shields.io/github/forks/cloudpilot-ai/karpenter-provider-alibabacloud)
+[![GitHub License](https://img.shields.io/badge/License-Apache%202.0-ff69b4.svg)](https://github.com/cloudpilot-ai/karpenter-provider-alibabacloud/blob/main/LICENSE)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/cloudpilot-ai/karpenter-provider-alibabacloud/issues)
 
 <p align="center">
     <img src="docs/images/banner.png" height="200" />

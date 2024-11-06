@@ -31,8 +31,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/version"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/version"
 )
 
 type Provider interface {

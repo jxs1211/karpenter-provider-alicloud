@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	Group              = "karpenter.k8s.alicloud"
+	Group              = "karpenter.k8s.alibabacloud"
 	CompatibilityGroup = "compatibility." + Group
 	CRDs               = apis.CRDs // object.Unmarshal[apiextensionsv1.CustomResourceDefinition](crds.ECSNodeClassCRD)
 )

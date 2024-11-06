@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/karpenter/pkg/operator/injection"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instancetype"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instancetype"
 )
 
 type Controller struct {

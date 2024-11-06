@@ -22,7 +22,7 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
 )
 
 func Test_convertNodeClassKubeletConfigToACKNodeConfig(t *testing.T) {

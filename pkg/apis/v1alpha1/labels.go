@@ -25,7 +25,7 @@ import (
 	coreapis "sigs.k8s.io/karpenter/pkg/apis"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis"
 )
 
 func init() {
