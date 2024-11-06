@@ -49,6 +49,31 @@ func NewDefaultProvider(clusterID string, ackClient *ackclient.Client) *DefaultP
 	}
 }
 
+func (p *DefaultProvider) GetClusterCNI(ctx context.Context) (string, error) {
+	response, err := p.ackClient.DescribeClusterDetail(tea.String(p.clusterID))
+	if err != nil {
+		return "", fmt.Errorf("failed to describe cluster: %w", err)
+	}
+	if response.Body == nil {
+		return "", fmt.Errorf("empty cluster response")
+	}
+	if response.Body.MetaData == nil {
+		return "", fmt.Errorf("empty cluster metadata")
+	}
+	// Parse metadata JSON string
+	// clusterMetaData represents the metadata structure in cluster response
+	type clusterMetaData struct {
+		Capabilities struct {
+			Network string `json:"Network"`
+		} `json:"Capabilities"`
+	}
+	var metadata clusterMetaData
+	if err := json.Unmarshal([]byte(*response.Body.MetaData), &metadata); err != nil {
+		return "", fmt.Errorf("failed to unmarshal cluster metadata: %w", err)
+	}
+	return metadata.Capabilities.Network, nil
+}
+
 func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
 	labels map[string]string,
 	kubeletCfg *v1alpha1.KubeletConfiguration) (string, error) {
