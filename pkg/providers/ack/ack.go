@@ -22,8 +22,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 
 	ackclient "github.com/alibabacloud-go/cs-20151215/v5/client"
 	"github.com/alibabacloud-go/tea/tea"
@@ -35,11 +37,16 @@ import (
 
 type Provider interface {
 	GetNodeRegisterScript(context.Context, map[string]string, *v1alpha1.KubeletConfiguration) (string, error)
+	GetClusterCNI(context.Context) (string, error)
+	LivenessProbe(*http.Request) error
 }
 
 type DefaultProvider struct {
 	clusterID string
 	ackClient *ackclient.Client
+
+	muClusterCNI sync.RWMutex
+	clusterCNI   string
 }
 
 func NewDefaultProvider(clusterID string, ackClient *ackclient.Client) *DefaultProvider {
@@ -49,16 +56,28 @@ func NewDefaultProvider(clusterID string, ackClient *ackclient.Client) *DefaultP
 	}
 }
 
-func (p *DefaultProvider) GetClusterCNI(ctx context.Context) (string, error) {
+func (p *DefaultProvider) LivenessProbe(_ *http.Request) error {
+	p.muClusterCNI.Lock()
+	//nolint: staticcheck
+	p.muClusterCNI.Unlock()
+	return nil
+}
+
+func (p *DefaultProvider) GetClusterCNI(_ context.Context) (string, error) {
+	p.muClusterCNI.RLock()
+	clusterCNI := p.clusterCNI
+	p.muClusterCNI.RUnlock()
+
+	if clusterCNI != "" {
+		return clusterCNI, nil
+	}
+
 	response, err := p.ackClient.DescribeClusterDetail(tea.String(p.clusterID))
 	if err != nil {
 		return "", fmt.Errorf("failed to describe cluster: %w", err)
 	}
-	if response.Body == nil {
+	if response.Body == nil || response.Body.MetaData == nil {
 		return "", fmt.Errorf("empty cluster response")
-	}
-	if response.Body.MetaData == nil {
-		return "", fmt.Errorf("empty cluster metadata")
 	}
 	// Parse metadata JSON string
 	// clusterMetaData represents the metadata structure in cluster response
@@ -71,7 +90,12 @@ func (p *DefaultProvider) GetClusterCNI(ctx context.Context) (string, error) {
 	if err := json.Unmarshal([]byte(*response.Body.MetaData), &metadata); err != nil {
 		return "", fmt.Errorf("failed to unmarshal cluster metadata: %w", err)
 	}
-	return metadata.Capabilities.Network, nil
+
+	p.muClusterCNI.Lock()
+	p.clusterCNI = metadata.Capabilities.Network
+	p.muClusterCNI.Unlock()
+
+	return p.clusterCNI, nil
 }
 
 func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,

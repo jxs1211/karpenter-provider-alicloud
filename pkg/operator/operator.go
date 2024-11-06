@@ -77,7 +77,6 @@ func NewOperator(ctx context.Context, operator *operator.Operator) (context.Cont
 		os.Exit(1)
 	}
 	clusterID := options.FromContext(ctx).ClusterID
-	clusterCNI := options.FromContext(ctx).ClusterCNI
 	region := *ecsClient.RegionId
 
 	pricingProvider, err := pricing.NewDefaultProvider(ctx, region)
@@ -103,7 +102,7 @@ func NewOperator(ctx context.Context, operator *operator.Operator) (context.Cont
 
 	unavailableOfferingsCache := alicache.NewUnavailableOfferings()
 	instanceTypeProvider := instancetype.NewDefaultProvider(
-		*ecsClient.RegionId, clusterCNI, ecsClient,
+		*ecsClient.RegionId, ecsClient,
 		cache.New(alicache.InstanceTypesAndZonesTTL, alicache.DefaultCleanupInterval),
 		unavailableOfferingsCache,
 		pricingProvider, nil)
