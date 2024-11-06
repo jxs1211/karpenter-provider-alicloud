@@ -75,7 +75,7 @@ func NewInstanceType(ctx context.Context,
 		Offerings:    offerings,
 		Capacity:     computeCapacity(ctx, info, kc.MaxPods, kc.PodsPerCore, systemDisk, clusterCNI),
 		Overhead: &cloudprovider.InstanceTypeOverhead{
-			KubeReserved:      kubeReservedResources(cpu(info), kc.KubeReserved),
+			KubeReserved:      kubeReservedResources(kc.KubeReserved),
 			SystemReserved:    systemReservedResources(kc.SystemReserved),
 			EvictionThreshold: evictionThreshold(memory(ctx, info), ephemeralStorage(systemDisk), kc.EvictionHard, kc.EvictionSoft),
 		},
@@ -179,49 +179,37 @@ func computeCapacity(ctx context.Context,
 	return resourceList
 }
 
-func kubeReservedResources(cpus *resource.Quantity, kubeReserved map[string]string) corev1.ResourceList {
+func kubeReservedResources(kubeReserved map[string]string) corev1.ResourceList {
 	resources := corev1.ResourceList{
-		// TODO: I am not sure whether these values are correct, let's figure it out latter
-		corev1.ResourceMemory:           resource.MustParse("255Mi"),
-		corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"), // default kube-reserved ephemeral-storage
+		// TODO: Following data is extract from real env
+		// Please check it more
+		corev1.ResourceMemory: resource.MustParse("447Mi"),
+		corev1.ResourceCPU:    resource.MustParse("35m"),
 	}
-	// kube-reserved Computed from
-	// https://github.com/bottlerocket-os/bottlerocket/pull/1388/files#diff-bba9e4e3e46203be2b12f22e0d654ebd270f0b478dd34f40c31d7aa695620f2fR611
-	for _, cpuRange := range []struct {
-		start      int64
-		end        int64
-		percentage float64
-	}{
-		{start: 0, end: 1000, percentage: 0.06},
-		{start: 1000, end: 2000, percentage: 0.01},
-		{start: 2000, end: 4000, percentage: 0.005},
-		{start: 4000, end: 1 << 31, percentage: 0.0025},
-	} {
-		if cpu := cpus.MilliValue(); cpu >= cpuRange.start {
-			r := float64(cpuRange.end - cpuRange.start)
-			if cpu < cpuRange.end {
-				r = float64(cpu - cpuRange.start)
-			}
-			cpuOverhead := resources.Cpu()
-			cpuOverhead.Add(*resource.NewMilliQuantity(int64(r*cpuRange.percentage), resource.DecimalSI))
-			resources[corev1.ResourceCPU] = *cpuOverhead
-		}
-	}
+
 	return lo.Assign(resources, lo.MapEntries(kubeReserved, func(k string, v string) (corev1.ResourceName, resource.Quantity) {
 		return corev1.ResourceName(k), resource.MustParse(v)
 	}))
 }
 
 func systemReservedResources(systemReserved map[string]string) corev1.ResourceList {
-	return lo.MapEntries(systemReserved, func(k string, v string) (corev1.ResourceName, resource.Quantity) {
+	resources := corev1.ResourceList{
+		// TODO: Following data is extract from real env
+		// Please check it more
+		corev1.ResourceMemory: resource.MustParse("447Mi"),
+		corev1.ResourceCPU:    resource.MustParse("35m"),
+	}
+
+	return lo.Assign(resources, lo.MapEntries(systemReserved, func(k string, v string) (corev1.ResourceName, resource.Quantity) {
 		return corev1.ResourceName(k), resource.MustParse(v)
-	})
+	}))
 }
 
 func evictionThreshold(memory *resource.Quantity, storage *resource.Quantity, evictionHard map[string]string, evictionSoft map[string]string) corev1.ResourceList {
 	overhead := corev1.ResourceList{
-		corev1.ResourceMemory:           resource.MustParse("100Mi"),
-		corev1.ResourceEphemeralStorage: resource.MustParse(fmt.Sprint(math.Ceil(float64(storage.Value()) / 100 * 10))),
+		// TODO: Following data is extract from real env
+		// Please check it more
+		corev1.ResourceMemory: resource.MustParse("300Mi"),
 	}
 
 	override := corev1.ResourceList{}
