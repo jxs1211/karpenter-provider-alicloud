@@ -92,7 +92,7 @@ spec:
                       description: 'Kind of the referent; More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds"'
                       type: string
                     name:
-                      description: 'Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names'
+                      description: "Name of the referent; More info: http://kubernetes.io/docs/user-guide/identifiers#names"
                       type: string
                   required:
                     - group
@@ -120,8 +120,8 @@ spec:
                             rule: self in ["karpenter.sh/capacity-type", "karpenter.sh/nodepool"] || !self.find("^([^/]+)").endsWith("karpenter.sh")
                           - message: label "kubernetes.io/hostname" is restricted
                             rule: self != "kubernetes.io/hostname"
-                          - message: label domain "karpenter.k8s.alicloud" is restricted
-                            rule: self in ["karpenter.k8s.alicloud/instance-encryption-in-transit-supported", "karpenter.k8s.alicloud/instance-category", "karpenter.k8s.alicloud/instance-hypervisor", "karpenter.k8s.alicloud/instance-family", "karpenter.k8s.alicloud/instance-generation", "karpenter.k8s.alicloud/instance-local-nvme", "karpenter.k8s.alicloud/instance-size", "karpenter.k8s.alicloud/instance-cpu","karpenter.k8s.alicloud/instance-cpu-manufacturer","karpenter.k8s.alicloud/instance-memory", "karpenter.k8s.alicloud/instance-ebs-bandwidth", "karpenter.k8s.alicloud/instance-network-bandwidth", "karpenter.k8s.alicloud/instance-gpu-name", "karpenter.k8s.alicloud/instance-gpu-manufacturer", "karpenter.k8s.alicloud/instance-gpu-count", "karpenter.k8s.alicloud/instance-gpu-memory", "karpenter.k8s.alicloud/instance-accelerator-name", "karpenter.k8s.alicloud/instance-accelerator-manufacturer", "karpenter.k8s.alicloud/instance-accelerator-count"] || !self.find("^([^/]+)").endsWith("karpenter.k8s.alicloud")
+                          - message: label domain "karpenter.k8s.alibabacloud" is restricted
+                            rule: self in ["karpenter.k8s.alibabacloud/instance-encryption-in-transit-supported", "karpenter.k8s.alibabacloud/instance-category", "karpenter.k8s.alibabacloud/instance-hypervisor", "karpenter.k8s.alibabacloud/instance-family", "karpenter.k8s.alibabacloud/instance-generation", "karpenter.k8s.alibabacloud/instance-local-nvme", "karpenter.k8s.alibabacloud/instance-size", "karpenter.k8s.alibabacloud/instance-cpu","karpenter.k8s.alibabacloud/instance-cpu-manufacturer","karpenter.k8s.alibabacloud/instance-memory", "karpenter.k8s.alibabacloud/instance-ebs-bandwidth", "karpenter.k8s.alibabacloud/instance-network-bandwidth", "karpenter.k8s.alibabacloud/instance-gpu-name", "karpenter.k8s.alibabacloud/instance-gpu-manufacturer", "karpenter.k8s.alibabacloud/instance-gpu-count", "karpenter.k8s.alibabacloud/instance-gpu-memory", "karpenter.k8s.alibabacloud/instance-accelerator-name", "karpenter.k8s.alibabacloud/instance-accelerator-manufacturer", "karpenter.k8s.alibabacloud/instance-accelerator-count"] || !self.find("^([^/]+)").endsWith("karpenter.k8s.alibabacloud")
                       minValues:
                         description: |-
                           This field is ALPHA and can be dropped or replaced at any time
@@ -162,11 +162,11 @@ spec:
                   type: array
                   x-kubernetes-validations:
                     - message: requirements with operator 'In' must have a value defined
-                      rule: 'self.all(x, x.operator == ''In'' ? x.values.size() != 0 : true)'
+                      rule: "self.all(x, x.operator == 'In' ? x.values.size() != 0 : true)"
                     - message: requirements operator 'Gt' or 'Lt' must have a single positive integer value
-                      rule: 'self.all(x, (x.operator == ''Gt'' || x.operator == ''Lt'') ? (x.values.size() == 1 && int(x.values[0]) >= 0) : true)'
+                      rule: "self.all(x, (x.operator == 'Gt' || x.operator == 'Lt') ? (x.values.size() == 1 && int(x.values[0]) >= 0) : true)"
                     - message: requirements with 'minValues' must have at least that many values specified in the 'values' field
-                      rule: 'self.all(x, (x.operator == ''In'' && has(x.minValues)) ? x.values.size() >= x.minValues : true)'
+                      rule: "self.all(x, (x.operator == 'In' && has(x.minValues)) ? x.values.size() >= x.minValues : true)"
                 resources:
                   description: Resources models the resource requirements for the NodeClaim to launch
                   properties:

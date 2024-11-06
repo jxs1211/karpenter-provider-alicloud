@@ -1,6 +1,6 @@
 ---
 name: Enhancement Request
-about: Suggest an enhancement to the Karpenter-provider-alicloud project
+about: Suggest an enhancement to the Karpenter-provider-alibabacloud project
 labels: kind/feature
 
 ---
