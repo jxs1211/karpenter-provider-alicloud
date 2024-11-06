@@ -78,7 +78,7 @@ var (
 	ECSClusterIDTagKey                                = "ecs:ecs-cluster-id"
 
 	LabelNodeClass                           = apis.Group + "/ecsnodeclass"
-	LabelTopologyZoneID                      = "topology.k8s.alicloud/zone-id"
+	LabelTopologyZoneID                      = "topology.k8s.alibabacloud/zone-id"
 	LabelInstanceCategory                    = apis.Group + "/instance-category"
 	LabelInstanceFamily                      = apis.Group + "/instance-family"
 	LabelInstanceGeneration                  = apis.Group + "/instance-generation"

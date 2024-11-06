@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug encountered while using Karpenter-provider-alicloud
+about: Report a bug encountered while using Karpenter-provider-alibabacloud
 labels: kind/bug
 
 ---
@@ -9,7 +9,6 @@ labels: kind/bug
 
 If the matter is security related, please email to admin@cloudpilot.ai
 -->
-
 
 **What happened**:
 
@@ -20,6 +19,7 @@ If the matter is security related, please email to admin@cloudpilot.ai
 **Anything else we need to know?**:
 
 **Environment**:
-- Karpenter-provider-alicloud version (use `git describe --tags --dirty --always`):
+
+- Karpenter-provider-alibabacloud version (use `git describe --tags --dirty --always`):
 - AliCloud ACK version:
 - Others:

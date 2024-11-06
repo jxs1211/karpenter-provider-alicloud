@@ -1,6 +1,6 @@
 ---
 name: Clean Up Request
-about: Suggest to clean up code, process or tech debt to the Karpenter-provider-alicloud project
+about: Suggest to clean up code, process or tech debt to the Karpenter-provider-alibabacloud project
 labels: kind/cleanup
 
 ---

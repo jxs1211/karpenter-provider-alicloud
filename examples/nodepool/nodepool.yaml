@@ -22,7 +22,8 @@ spec:
           operator: In
           values: ["spot"]
       nodeClassRef:
-        group: "karpenter.k8s.alicloud"
+        group: "karpenter.k8s.alibabacloud"
         kind: ECSNodeClass
         name: defaultnodeclass
 ---
+
