@@ -1,4 +1,4 @@
-module github.com/cloudpilot-ai/karpenter-provider-alicloud
+module github.com/cloudpilot-ai/karpenter-provider-alibabacloud
 
 go 1.23
 

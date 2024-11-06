@@ -38,10 +38,10 @@ import (
 	"sigs.k8s.io/karpenter/pkg/scheduling"
 	"sigs.k8s.io/karpenter/pkg/utils/pretty"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
-	kcache "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cache"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/pricing"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/vswitch"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	kcache "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/pricing"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/vswitch"
 )
 
 type Provider interface {

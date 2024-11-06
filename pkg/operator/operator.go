@@ -27,17 +27,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/karpenter/pkg/operator"
 
-	alicache "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cache"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator/options"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/ack"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/imagefamily"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instance"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instancetype"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/pricing"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/securitygroup"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/version"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/vswitch"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils/client"
+	alicache "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/operator/options"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/ack"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/imagefamily"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instance"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instancetype"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/pricing"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/securitygroup"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/version"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/vswitch"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/client"
 )
 
 // Operator is injected into the AliCloud CloudProvider's factories

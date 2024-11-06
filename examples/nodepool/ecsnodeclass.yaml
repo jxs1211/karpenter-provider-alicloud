@@ -1,4 +1,4 @@
-apiVersion: karpenter.k8s.alicloud/v1alpha1
+apiVersion: karpenter.k8s.alibabacloud/v1alpha1
 kind: ECSNodeClass
 metadata:
   name: defaultnodeclass

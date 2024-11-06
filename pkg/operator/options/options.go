@@ -26,7 +26,7 @@ import (
 	coreoptions "sigs.k8s.io/karpenter/pkg/operator/options"
 	"sigs.k8s.io/karpenter/pkg/utils/env"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils"
 )
 
 func init() {

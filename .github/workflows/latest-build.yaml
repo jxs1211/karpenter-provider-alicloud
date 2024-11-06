@@ -35,4 +35,4 @@ jobs:
       - name: build and publish image
         run: |
           export KO_DOCKER_REPO=public.ecr.aws/cloudpilotai/alibabacloud/karpenter
-          ko build --bare github.com/cloudpilot-ai/karpenter-provider-alicloud/cmd/controller
+          ko build --bare github.com/cloudpilot-ai/karpenter-provider-alibabacloud/cmd/controller

@@ -32,8 +32,8 @@ import (
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/events"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cache"
-	interruptionevents "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers/interruption/events"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
+	interruptionevents "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/interruption/events"
 )
 
 const (

@@ -35,10 +35,10 @@ import (
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 	"sigs.k8s.io/karpenter/pkg/operator/injection"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator/options"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/providers/instance"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/operator/options"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instance"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils"
 )
 
 type Controller struct {

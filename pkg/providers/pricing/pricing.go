@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/karpenter/pkg/utils/pretty"
 
-	utilsobject "github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/utils/object"
+	utilsobject "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/object"
 )
 
 //go:embed initial-on-demand-prices.json

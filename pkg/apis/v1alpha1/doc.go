@@ -16,7 +16,7 @@ limitations under the License.
 
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +groupName=karpenter.k8s.alicloud
+// +groupName=karpenter.k8s.alibabacloud
 package v1alpha1
 
 import (
@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis"
 )
 
 func init() {

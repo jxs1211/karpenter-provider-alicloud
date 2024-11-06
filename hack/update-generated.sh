@@ -15,7 +15,7 @@ cleanup() {
 }
 trap "cleanup" EXIT SIGINT
 
-KARPENTER_GO_PACKAGE="github.com/cloudpilot-ai/karpenter-provider-alicloud"
+KARPENTER_GO_PACKAGE="github.com/cloudpilot-ai/karpenter-provider-alibabacloud"
 GO_PKG_DIR=$(dirname "${GOPATH}/src/${KARPENTER_GO_PACKAGE}")
 mkdir -p "${GO_PKG_DIR}"
 
@@ -26,4 +26,4 @@ fi
 deepcopy-gen \
   --go-header-file hack/boilerplate.go.txt \
   --output-file-base zz_generated.deepcopy \
-  --input-dirs github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/apis/v1alpha1
+  --input-dirs github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1

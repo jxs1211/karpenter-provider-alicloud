@@ -22,9 +22,9 @@ import (
 	corecontrollers "sigs.k8s.io/karpenter/pkg/controllers"
 	coreoperator "sigs.k8s.io/karpenter/pkg/operator"
 
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/cloudprovider"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/controllers"
-	"github.com/cloudpilot-ai/karpenter-provider-alicloud/pkg/operator"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cloudprovider"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/operator"
 )
 
 func main() {

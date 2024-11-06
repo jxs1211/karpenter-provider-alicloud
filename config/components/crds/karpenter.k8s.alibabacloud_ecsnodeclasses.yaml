@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.4
-  name: ecsnodeclasses.karpenter.k8s.alicloud
+  name: ecsnodeclasses.karpenter.k8s.alibabacloud
 spec:
-  group: karpenter.k8s.alicloud
+  group: karpenter.k8s.alibabacloud
   names:
     categories:
     - karpenter
