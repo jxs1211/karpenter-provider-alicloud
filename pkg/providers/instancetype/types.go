@@ -154,7 +154,7 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 		requirements.Get(v1alpha1.LabelInstanceGPUName).Insert(lowerKabobCase(*info.GPUSpec))
 		requirements.Get(v1alpha1.LabelInstanceGPUManufacturer).Insert(getGPUManufacturer(*info.GPUSpec))
 		requirements.Get(v1alpha1.LabelInstanceGPUCount).Insert(fmt.Sprint(*info.GPUAmount))
-		requirements.Get(v1alpha1.LabelInstanceGPUMemory).Insert(fmt.Sprint(info.GPUMemorySize))
+		requirements.Get(v1alpha1.LabelInstanceGPUMemory).Insert(fmt.Sprint(*info.GPUMemorySize))
 	}
 
 	// CPU Manufacturer, valid options: intel, amd
@@ -316,7 +316,9 @@ func amdGPUs(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInsta
 }
 
 func lowerKabobCase(s string) string {
-	return strings.ToLower(strings.ReplaceAll(s, " ", "-"))
+	ret := strings.ReplaceAll(s, " ", "-")
+	ret = strings.ReplaceAll(ret, "/", "-")
+	return strings.ToLower(strings.ReplaceAll(ret, "*", "-"))
 }
 
 func getGPUManufacturer(gpuName string) string {
