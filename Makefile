@@ -52,11 +52,13 @@ image: ## Build the Karpenter controller images using ko build
 	$(eval IMG_TAG=$(shell echo $(CONTROLLER_IMG) | cut -d "@" -f 1 | cut -d ":" -f 2 -s))
 
 apply: image ## Deploy the controller from the current state of your git repository into your ~/.kube/config cluster
-	helm upgrade --install karpenter charts/karpenter --namespace ${KARPENTER_NAMESPACE} \
-        $(HELM_OPTS) \
-        --set logLevel=debug \
-        --set controller.image.repository=$(IMG_REPOSITORY) \
-        --set controller.image.tag=$(IMG_TAG) \
+	helm upgrade --install karpenter charts/karpenter \
+		--create-namespace \
+		--namespace ${KARPENTER_NAMESPACE} \
+		$(HELM_OPTS) \
+		--set logLevel=debug \
+		--set controller.image.repository=$(IMG_REPOSITORY) \
+		--set controller.image.tag=$(IMG_TAG) \
 
 delete: ## Delete the controller from your kubeconfig cluster
 	helm uninstall karpenter --namespace ${KARPENTER_NAMESPACE}
