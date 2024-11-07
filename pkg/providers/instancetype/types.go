@@ -47,7 +47,8 @@ const (
 	MemoryAvailable = "memory.available"
 	NodeFSAvailable = "nodefs.available"
 
-	GiBMiBRatio              = 1024 * 1024
+	GiBMiBRatio              = 1024
+	MiBByteRatio             = 1024 * 1024
 	TerwayMinENIRequirements = 11
 	BaseHostNetworkPods      = 3
 	FlannelDefaultPods       = 256
@@ -116,7 +117,7 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 		// Well Known to AlibabaCloud
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCPU, corev1.NodeSelectorOpIn, fmt.Sprint(*info.CpuCoreCount)),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCPUModel, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceMemory, corev1.NodeSelectorOpIn, fmt.Sprint(*info.MemorySize)),
+		scheduling.NewRequirement(v1alpha1.LabelInstanceMemory, corev1.NodeSelectorOpIn, fmt.Sprint(*info.MemorySize*GiBMiBRatio)),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCategory, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceFamily, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGeneration, corev1.NodeSelectorOpDoesNotExist),
@@ -272,7 +273,7 @@ func memory(ctx context.Context, info *ecsclient.DescribeInstanceTypesResponseBo
 		return mem
 	}
 	// Account for VM overhead in calculation
-	mem.Sub(resource.MustParse(fmt.Sprintf("%dMi", int64(math.Ceil(float64(mem.Value())*options.FromContext(ctx).VMMemoryOverheadPercent/GiBMiBRatio)))))
+	mem.Sub(resource.MustParse(fmt.Sprintf("%dMi", int64(math.Ceil(float64(mem.Value())*options.FromContext(ctx).VMMemoryOverheadPercent/MiBByteRatio)))))
 	return mem
 }
 
