@@ -462,6 +462,11 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		systemDisk = imagefamily.DefaultSystemDisk.DeepCopy()
 	}
 
+	imageID, ok := mappedImages[instanceTypes[0].Name]
+	if !ok {
+		return nil, errors.New("matching image not found")
+	}
+
 	createAutoProvisioningGroupRequest := &ecsclient.CreateAutoProvisioningGroupRequest{
 		RegionId:                        tea.String(p.region),
 		TotalTargetCapacity:             tea.String("1"),
@@ -472,7 +477,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		AutoProvisioningGroupType:       tea.String("instant"),
 		LaunchConfiguration: &ecsclient.CreateAutoProvisioningGroupRequestLaunchConfiguration{
 			// TODO: we should set image id for each instance types after alibabacloud supports
-			ImageId:          tea.String(mappedImages[instanceTypes[0].Name]),
+			ImageId:          tea.String(imageID),
 			SecurityGroupIds: securityGroupIDs,
 			UserData:         tea.String(userData),
 
