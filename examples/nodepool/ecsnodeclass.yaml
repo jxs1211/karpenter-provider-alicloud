@@ -10,4 +10,7 @@ spec:
     - tags:
         karpenter.sh/discovery: "cluster-demonstration" # replace with your cluster name
   imageSelectorTerms:
-    - alias: AlibabaCloudLinux3
+    # ContainerOS only support x86_64 linux nodes, and it's faster to initialize
+    - alias: ContainerOS
+    # AlibabaCloudLinux3 only support x86_64/arm64 linux nodes
+    #- alias: AlibabaCloudLinux3
