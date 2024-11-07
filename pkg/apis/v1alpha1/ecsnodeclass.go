@@ -25,7 +25,7 @@ import (
 )
 
 // ECSNodeClassSpec is the top level specification for the AlibabaCloud Karpenter Provider.
-// This will contain configuration necessary to launch instances in AliCloud.
+// This will contain the configuration necessary to launch instances in AlibabaCloud.
 type ECSNodeClassSpec struct {
 	// VSwitchSelectorTerms is a list of or vSwitch selector terms. The terms are ORed.
 	// +kubebuilder:validation:XValidation:message="vSwitchSelectorTerms cannot be empty",rule="self.size() != 0"
