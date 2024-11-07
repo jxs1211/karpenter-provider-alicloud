@@ -105,7 +105,7 @@ func NewOperator(ctx context.Context, operator *operator.Operator) (context.Cont
 		*ecsClient.RegionId, ecsClient,
 		cache.New(alicache.InstanceTypesAndZonesTTL, alicache.DefaultCleanupInterval),
 		unavailableOfferingsCache,
-		pricingProvider, nil)
+		pricingProvider, ackProvider)
 
 	return ctx, &Operator{
 		Operator: operator,
