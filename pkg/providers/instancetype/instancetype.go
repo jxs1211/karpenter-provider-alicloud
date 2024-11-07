@@ -40,8 +40,8 @@ import (
 
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
 	kcache "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/ack"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/pricing"
-	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/vswitch"
 )
 
 type Provider interface {
@@ -53,10 +53,9 @@ type Provider interface {
 
 type DefaultProvider struct {
 	region          string
-	clusterCNI      string
 	ecsClient       *ecsclient.Client
-	vSwitchProvider vswitch.Provider
 	pricingProvider pricing.Provider
+	ackProvider     ack.Provider
 
 	// Values stored *before* considering insufficient capacity errors from the unavailableOfferings cache.
 	// Fully initialized Instance Types are also cached based on the set of all instance types, zones, unavailableOfferings cache,
@@ -79,15 +78,14 @@ type DefaultProvider struct {
 	instanceTypesOfferingsSeqNum uint64
 }
 
-func NewDefaultProvider(region, clusterCNI string, ecsClient *ecsclient.Client,
+func NewDefaultProvider(region string, ecsClient *ecsclient.Client,
 	instanceTypesCache *cache.Cache, unavailableOfferingsCache *kcache.UnavailableOfferings,
-	pricingProvider pricing.Provider, vSwitchProvider vswitch.Provider) *DefaultProvider {
+	pricingProvider pricing.Provider, ackProvider ack.Provider) *DefaultProvider {
 	return &DefaultProvider{
 		ecsClient:              ecsClient,
 		region:                 region,
-		clusterCNI:             clusterCNI,
-		vSwitchProvider:        vSwitchProvider,
 		pricingProvider:        pricingProvider,
+		ackProvider:            ackProvider,
 		instanceTypesInfo:      []*ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType{},
 		instanceTypesOfferings: map[string]sets.Set[string]{},
 		instanceTypesCache:     instanceTypesCache,
@@ -98,10 +96,24 @@ func NewDefaultProvider(region, clusterCNI string, ecsClient *ecsclient.Client,
 }
 
 func (p *DefaultProvider) LivenessProbe(req *http.Request) error {
-	if err := p.vSwitchProvider.LivenessProbe(req); err != nil {
+	if err := p.ackProvider.LivenessProbe(req); err != nil {
 		return err
 	}
 	return p.pricingProvider.LivenessProbe(req)
+}
+
+func (p *DefaultProvider) validateState(nodeClass *v1alpha1.ECSNodeClass) error {
+	if len(p.instanceTypesInfo) == 0 {
+		return errors.New("no instance types found")
+	}
+	if len(p.instanceTypesOfferings) == 0 {
+		return errors.New("no instance types offerings found")
+	}
+	if len(nodeClass.Status.VSwitches) == 0 {
+		return errors.New("no vswitches found")
+	}
+
+	return nil
 }
 
 func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfiguration, nodeClass *v1alpha1.ECSNodeClass) ([]*cloudprovider.InstanceType, error) {
@@ -113,14 +125,8 @@ func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfigur
 	if kc == nil {
 		kc = &v1alpha1.KubeletConfiguration{}
 	}
-	if len(p.instanceTypesInfo) == 0 {
-		return nil, errors.New("no instance types found")
-	}
-	if len(p.instanceTypesOfferings) == 0 {
-		return nil, errors.New("no instance types offerings found")
-	}
-	if len(nodeClass.Status.VSwitches) == 0 {
-		return nil, errors.New("no vswitches found")
+	if err := p.validateState(nodeClass); err != nil {
+		return nil, err
 	}
 
 	vSwitchsZones := sets.New(lo.Map(nodeClass.Status.VSwitches, func(s v1alpha1.VSwitch, _ int) string {
@@ -157,6 +163,11 @@ func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfigur
 		log.FromContext(ctx).WithValues("zones", allZones.UnsortedList()).V(1).Info("discovered zones")
 	}
 
+	clusterCNI, err := p.ackProvider.GetClusterCNI(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get cluster CNI: %w", err)
+	}
+
 	result := lo.Map(p.instanceTypesInfo, func(i *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, _ int) *cloudprovider.InstanceType {
 		zoneData := lo.Map(allZones.UnsortedList(), func(zoneID string, _ int) ZoneData {
 			if !p.instanceTypesOfferings[lo.FromPtr(i.InstanceTypeId)].Has(zoneID) || !vSwitchsZones.Has(zoneID) {
@@ -176,7 +187,7 @@ func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfigur
 		// so that Karpenter is able to cache the set of InstanceTypes based on values that alter the set of instance types
 		// !!! Important !!!
 		offers := p.createOfferings(ctx, *i.InstanceTypeId, zoneData)
-		return NewInstanceType(ctx, i, kc, p.region, nodeClass.Spec.SystemDisk, offers, p.clusterCNI)
+		return NewInstanceType(ctx, i, kc, p.region, nodeClass.Spec.SystemDisk, offers, clusterCNI)
 	})
 
 	// Filter out nil values
@@ -199,9 +210,15 @@ func (p *DefaultProvider) UpdateInstanceTypes(ctx context.Context) error {
 		log.FromContext(ctx).Error(err, "failed to get instance types")
 		return err
 	}
+
+	clusterCNI, err := p.ackProvider.GetClusterCNI(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get cluster CNI: %w", err)
+	}
+
 	instanceTypes = lo.Filter(instanceTypes,
 		func(item *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, index int) bool {
-			switch p.clusterCNI {
+			switch clusterCNI {
 			// TODO: support other network type, please check https://help.aliyun.com/zh/ack/ack-managed-and-ack-dedicated/user-guide/container-network/?spm=a2c4g.11186623.help-menu-85222.d_2_4_3.6d501109uQI315&scm=20140722.H_195424._.OR_help-V_1
 			case ClusterCNITypeTerway:
 				maxENIPods := (tea.Int32Value(item.EniQuantity) - 1) * tea.Int32Value(item.EniPrivateIpAddressQuantity)
