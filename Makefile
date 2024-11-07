@@ -32,7 +32,7 @@ toolchain: ## Install developer toolchain
 
 run: ## Run Karpenter controller binary against your local cluster
 	SYSTEM_NAMESPACE=${KARPENTER_NAMESPACE} \
-		KUBERNETES_MIN_VERSION="1.19.0-0" \
+		KUBERNETES_MIN_VERSION="v1.26.0" \
 		DISABLE_LEADER_ELECTION=true \
 		CLUSTER_NAME=${CLUSTER_NAME} \
 		INTERRUPTION_QUEUE=${CLUSTER_NAME} \
