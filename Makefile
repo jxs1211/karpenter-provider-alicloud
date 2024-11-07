@@ -62,7 +62,7 @@ apply: image ## Deploy the controller from the current state of your git reposit
 
 delete: ## Delete the controller from your kubeconfig cluster
 	helm uninstall karpenter --namespace ${KARPENTER_NAMESPACE}
-	kubectl delete ns karpenter
+	kubectl delete ns ${KARPENTER_NAMESPACE}
 
 ut-test: ## Run unit tests
 	go test ./pkg/... \
