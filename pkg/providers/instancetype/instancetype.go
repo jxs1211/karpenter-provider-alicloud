@@ -145,9 +145,17 @@ func (p *DefaultProvider) List(ctx context.Context, kc *v1alpha1.KubeletConfigur
 	)
 
 	if item, ok := p.instanceTypesCache.Get(key); ok {
-		// Ensure what's returned from this function is a shallow-copy of the slice (not a deep-copy of the data itself)
-		// so that modifications to the ordering of the data don't affect the original
-		return append([]*cloudprovider.InstanceType{}, item.([]*cloudprovider.InstanceType)...), nil
+		// TODO: some place changes the Capacity filed, we should find it out and fix it, same with aws provider
+		return lo.Map(item.([]*cloudprovider.InstanceType),
+			func(item *cloudprovider.InstanceType, _ int) *cloudprovider.InstanceType {
+				return &cloudprovider.InstanceType{
+					Name:         item.Name,
+					Requirements: item.Requirements,
+					Offerings:    item.Offerings,
+					Capacity:     item.Capacity.DeepCopy(),
+					Overhead:     item.Overhead,
+				}
+			}), nil
 	}
 
 	// Get all zones across all offerings
