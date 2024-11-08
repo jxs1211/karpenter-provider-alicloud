@@ -28,11 +28,9 @@ podAnnotations: {}
 podLabels: {}
 
 alibabacloud:
-  profiles:
-    - mode: "AK"
-      access_key_id: ""
-      access_key_secret: ""
-      region_id: ""
+  access_key_id: ""
+  access_key_secret: ""
+  region_id: ""
 
 podDisruptionBudget:
   maxUnavailable: 1
