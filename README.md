@@ -7,9 +7,6 @@
     <img src="docs/images/banner.png" height="200" />
 </p>
 
-> [!NOTE]  
-> It’s not available for use temporarily. We are diligently working on it, and it will be available shortly.
-
 Karpenter is an open-source node provisioning project built for Kubernetes.
 Karpenter improves the efficiency and cost of running workloads on Kubernetes clusters by:
 
