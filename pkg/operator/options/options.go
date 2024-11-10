@@ -39,6 +39,7 @@ type Options struct {
 	ClusterID               string
 	VMMemoryOverheadPercent float64
 	Interruption            bool
+	TelemetryShare          bool
 }
 
 func (o *Options) AddFlags(fs *coreoptions.FlagSet) {
@@ -46,6 +47,7 @@ func (o *Options) AddFlags(fs *coreoptions.FlagSet) {
 	// TODO: for different OS, the overhead is different, find a way to fix this.
 	fs.Float64Var(&o.VMMemoryOverheadPercent, "vm-memory-overhead-percent", utils.WithDefaultFloat64("VM_MEMORY_OVERHEAD_PERCENT", 0.065), "The VM memory overhead as a percent that will be subtracted from the total memory for all instance types.")
 	fs.BoolVar(&o.Interruption, "interruption", env.WithDefaultBool("INTERRUPTION", true), "Enable interruption handling.")
+	fs.BoolVar(&o.TelemetryShare, "telemetry-share", env.WithDefaultBool("TELEMETRY_SHARE", true), "Enable telemetry sharing.")
 }
 
 func (o *Options) Parse(fs *coreoptions.FlagSet, args ...string) error {

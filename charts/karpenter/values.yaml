@@ -1,5 +1,5 @@
-nameOverride: ""  # Override the default name, empty means no override
-fullnameOverride: ""  # Override the full name, empty means no override
+nameOverride: "" # Override the default name, empty means no override
+fullnameOverride: "" # Override the full name, empty means no override
 
 # -- Global log level, defaults to 'info'
 logLevel: info
@@ -11,7 +11,7 @@ logErrorOutputPaths:
   - stderr
 
 # -- Additional annotations to add into metadata.
-additionalAnnotations: {}  # Empty dictionary for extra annotations
+additionalAnnotations: {} # Empty dictionary for extra annotations
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -72,3 +72,5 @@ controller:
     # faster than this time, the batching window will be extended up to the maxDuration. If they arrive slower, the pods
     # will be batched separately.
     batchIdleDuration: 1s
+    # Enable telemetry sharing
+    telemetryShare: "true"

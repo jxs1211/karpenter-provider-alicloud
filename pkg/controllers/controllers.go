@@ -20,6 +20,8 @@ import (
 	"context"
 
 	"github.com/awslabs/operatorpkg/controller"
+	"k8s.io/client-go/rest"
+	metricsclientset "k8s.io/metrics/pkg/client/clientset/versioned"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -35,6 +37,7 @@ import (
 	nodeclasstermination "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/nodeclass/termination"
 	providersinstancetype "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/providers/instancetype"
 	controllerspricing "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/providers/pricing"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/telemetry"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/operator/options"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/imagefamily"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/instance"
@@ -44,7 +47,7 @@ import (
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/vswitch"
 )
 
-func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock,
+func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock, restConfig *rest.Config,
 	kubeClient client.Client, recorder events.Recorder,
 	unavailableOfferings *cache.UnavailableOfferings,
 	cloudProvider cloudprovider.CloudProvider,
@@ -65,6 +68,10 @@ func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock,
 
 	if options.FromContext(ctx).Interruption {
 		controllers = append(controllers, interruption.NewController(kubeClient, recorder, unavailableOfferings))
+	}
+
+	if options.FromContext(ctx).TelemetryShare {
+		controllers = append(controllers, telemetry.NewController(kubeClient, metricsclientset.NewForConfigOrDie(restConfig)))
 	}
 	return controllers
 }

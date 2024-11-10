@@ -17,6 +17,7 @@ limitations under the License.
 package utils
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"regexp"
@@ -101,4 +102,8 @@ func WithDefaultFloat64(key string, def float64) float64 {
 
 func GetCapacityTypes(spotStrategy string) string {
 	return lo.Ternary(spotStrategy != "NoSpot", karpv1.CapacityTypeSpot, karpv1.CapacityTypeOnDemand)
+}
+
+func Hash(str string) string {
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(str)))
 }

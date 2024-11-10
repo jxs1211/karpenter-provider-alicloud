@@ -50,19 +50,13 @@ func main() {
 			cloudProvider,
 		)...).
 		WithControllers(ctx, controllers.NewControllers(
-			ctx,
-			op.Manager,
-			op.Clock,
-			op.GetClient(),
-			op.EventRecorder,
+			ctx, op.Manager, op.Clock, op.GetConfig(),
+			op.GetClient(), op.EventRecorder,
 			op.UnavailableOfferingsCache,
 			cloudProvider,
-			op.InstanceProvider,
-			op.InstanceTypeProvider,
-			op.PricingProvider,
-			op.VSwitchProvider,
-			op.SecurityGroupProvider,
-			op.ImageProvider,
+			op.InstanceProvider, op.InstanceTypeProvider,
+			op.PricingProvider, op.VSwitchProvider,
+			op.SecurityGroupProvider, op.ImageProvider,
 		)...).
 		Start(ctx, cloudProvider)
 }
