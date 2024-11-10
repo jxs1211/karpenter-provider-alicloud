@@ -102,8 +102,8 @@ func extractECSArch(unFormatedArch string) string {
 func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType, offerings cloudprovider.Offerings, region string) scheduling.Requirements {
 	requirements := scheduling.NewRequirements(
 		// Well Known Upstream
-		scheduling.NewRequirement(corev1.LabelInstanceTypeStable, corev1.NodeSelectorOpIn, *info.InstanceTypeId),
-		scheduling.NewRequirement(corev1.LabelArchStable, corev1.NodeSelectorOpIn, extractECSArch(*info.CpuArchitecture)),
+		scheduling.NewRequirement(corev1.LabelInstanceTypeStable, corev1.NodeSelectorOpIn, tea.StringValue(info.InstanceTypeId)),
+		scheduling.NewRequirement(corev1.LabelArchStable, corev1.NodeSelectorOpIn, extractECSArch(tea.StringValue(info.CpuArchitecture))),
 		scheduling.NewRequirement(corev1.LabelOSStable, corev1.NodeSelectorOpIn, string(corev1.Linux)),
 		scheduling.NewRequirement(corev1.LabelTopologyZone, corev1.NodeSelectorOpIn, lo.Map(offerings.Available(), func(o cloudprovider.Offering, _ int) string {
 			return o.Requirements.Get(corev1.LabelTopologyZone).Any()
@@ -115,9 +115,9 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 			return o.Requirements.Get(karpv1.CapacityTypeLabelKey).Any()
 		})...),
 		// Well Known to AlibabaCloud
-		scheduling.NewRequirement(v1alpha1.LabelInstanceCPU, corev1.NodeSelectorOpIn, fmt.Sprint(*info.CpuCoreCount)),
+		scheduling.NewRequirement(v1alpha1.LabelInstanceCPU, corev1.NodeSelectorOpIn, fmt.Sprint(tea.Int32Value(info.CpuCoreCount))),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCPUModel, corev1.NodeSelectorOpDoesNotExist),
-		scheduling.NewRequirement(v1alpha1.LabelInstanceMemory, corev1.NodeSelectorOpIn, fmt.Sprint(*info.MemorySize*GiBMiBRatio)),
+		scheduling.NewRequirement(v1alpha1.LabelInstanceMemory, corev1.NodeSelectorOpIn, fmt.Sprint(tea.Float32Value(info.MemorySize)*GiBMiBRatio)),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceCategory, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceFamily, corev1.NodeSelectorOpDoesNotExist),
 		scheduling.NewRequirement(v1alpha1.LabelInstanceGeneration, corev1.NodeSelectorOpDoesNotExist),
@@ -137,12 +137,12 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 	}
 
 	// Instance Type Labels
-	instanceFamilyParts := instanceTypeScheme.FindStringSubmatch(*info.InstanceTypeId)
+	instanceFamilyParts := instanceTypeScheme.FindStringSubmatch(tea.StringValue(info.InstanceTypeId))
 	if len(instanceFamilyParts) == 4 {
 		requirements[v1alpha1.LabelInstanceCategory].Insert(instanceFamilyParts[1])
 		requirements[v1alpha1.LabelInstanceGeneration].Insert(instanceFamilyParts[3])
 	}
-	instanceTypeParts := strings.Split(*info.InstanceTypeId, ".")
+	instanceTypeParts := strings.Split(tea.StringValue(info.InstanceTypeId), ".")
 	// The format is ecs.c1m1.xlarge
 	if len(instanceTypeParts) == 3 {
 		requirements.Get(v1alpha1.LabelInstanceFamily).Insert(strings.Join(instanceTypeParts[0:2], "."))
@@ -150,16 +150,16 @@ func computeRequirements(info *ecsclient.DescribeInstanceTypesResponseBodyInstan
 	}
 
 	// GPU Labels
-	if info.GPUAmount != nil && *info.GPUAmount != 0 {
-		requirements.Get(v1alpha1.LabelInstanceGPUName).Insert(lowerKabobCase(*info.GPUSpec))
-		requirements.Get(v1alpha1.LabelInstanceGPUManufacturer).Insert(getGPUManufacturer(*info.GPUSpec))
-		requirements.Get(v1alpha1.LabelInstanceGPUCount).Insert(fmt.Sprint(*info.GPUAmount))
-		requirements.Get(v1alpha1.LabelInstanceGPUMemory).Insert(fmt.Sprint(*info.GPUMemorySize))
+	if tea.Int32Value(info.GPUAmount) != 0 {
+		requirements.Get(v1alpha1.LabelInstanceGPUName).Insert(lowerKabobCase(tea.StringValue(info.GPUSpec)))
+		requirements.Get(v1alpha1.LabelInstanceGPUManufacturer).Insert(getGPUManufacturer(tea.StringValue(info.GPUSpec)))
+		requirements.Get(v1alpha1.LabelInstanceGPUCount).Insert(fmt.Sprint(tea.Int32Value(info.GPUAmount)))
+		requirements.Get(v1alpha1.LabelInstanceGPUMemory).Insert(fmt.Sprint(tea.Float32Value(info.GPUMemorySize)))
 	}
 
 	// CPU Manufacturer, valid options: intel, amd
 	if info.PhysicalProcessorModel != nil {
-		requirements.Get(v1alpha1.LabelInstanceCPUModel).Insert(getCPUModel(*info.PhysicalProcessorModel))
+		requirements.Get(v1alpha1.LabelInstanceCPUModel).Insert(getCPUModel(tea.StringValue(info.PhysicalProcessorModel)))
 	}
 
 	return requirements
