@@ -55,14 +55,12 @@ controller:
     port: 8081
   featureGates:
     # Enable this will enable spot replacement consolidation for both single and multi-node consolidation.
-    spotToSpotConsolidation: false
+    spotToSpotConsolidation: true
   affinity: {}
   tolerations: []
   settings:
     # -- The network cni used by the cluster.
     clusterCNI: terway-eniip
-    # -- The kubernetes cluster name for resource discovery.
-    clusterName: ""
     # -- The external kubernetes cluster id for new nodes to connect with.
     clusterID: ""
     # -- The VM memory overhead as a percent that will be subtracted from the total memory for all instance types. The value of `0.075` equals to 7.5%.
