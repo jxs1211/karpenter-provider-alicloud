@@ -53,3 +53,7 @@ We want your contributions and suggestions! One of the easiest ways to contribut
 ## Code Of Conduct
 
 Karpenter Alibaba Cloud Provider adopts [CNCF code of conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+
+## License
+
+Karpenter Alibaba Cloud Provider is under the Apache 2.0 license. See the [LICENSE](LICENSE) file for details.
