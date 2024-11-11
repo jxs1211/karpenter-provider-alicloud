@@ -414,6 +414,10 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 	requirements := scheduling.NewNodeSelectorRequirementsWithMinValues(nodeClaim.Spec.Requirements...)
 
 	instanceTypes = p.imageFamilyResolver.FilterInstanceTypesBySystemDisk(ctx, nodeClass, instanceTypes)
+	if len(instanceTypes) == 0 {
+		return nil, errors.New("no instance types match the system disk requirements")
+	}
+
 	mappedImages := mapToInstanceTypes(instanceTypes, nodeClass.Status.Images)
 
 	requirements[karpv1.CapacityTypeLabelKey] = scheduling.NewRequirement(karpv1.CapacityTypeLabelKey, corev1.NodeSelectorOpIn, capacityType)

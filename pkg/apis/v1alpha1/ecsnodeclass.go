@@ -198,10 +198,10 @@ type KubeletConfiguration struct {
 }
 
 type SystemDisk struct {
-	// The category of the system disk (for example, cloud or cloud_ssd).
+	// The category of the system disk (for example, cloud and cloud_ssd).
 	// Different ECS is compatible with different disk category, using array to maximize ECS creation success.
 	// Valid values:"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd", "cloud_auto", and "cloud_essd_entry"
-	// +kubebuilder:validation:Enum:={cloud,cloud_efficiency,cloud_ssd,cloud_essd,cloud_auto,cloud_essd_entry}
+	// +kubebuilder:validation:Items=Enum=cloud;cloud_efficiency;cloud_ssd;cloud_essd;cloud_auto;cloud_essd_entry
 	// +optional
 	Categories []string `json:"categories,omitempty"`
 	// The size of the system disk. Unit: GiB.
