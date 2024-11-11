@@ -9,6 +9,12 @@ spec:
   securityGroupSelectorTerms:
     - tags:
         karpenter.sh/discovery: "cluster-demonstration" # replace with your cluster name
+  systemDisk:
+    categories:
+      - cloud
+      - cloud_ssd
+      - cloud_auto
+    size: 60
   imageSelectorTerms:
     # ContainerOS only support x86_64 linux nodes, and it's faster to initialize
     - alias: ContainerOS

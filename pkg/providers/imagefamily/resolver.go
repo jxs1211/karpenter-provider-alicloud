@@ -69,7 +69,9 @@ type InstanceTypeAvailableSystemDisk struct {
 }
 
 func newInstanceTypeAvailableSystemDisk() *InstanceTypeAvailableSystemDisk {
-	return &InstanceTypeAvailableSystemDisk{}
+	return &InstanceTypeAvailableSystemDisk{
+		availableSystemDisk: sets.Set[string]{},
+	}
 }
 
 func (s *InstanceTypeAvailableSystemDisk) AddAvailableSystemDisk(systemDisks ...string) {
@@ -78,12 +80,12 @@ func (s *InstanceTypeAvailableSystemDisk) AddAvailableSystemDisk(systemDisks ...
 
 func (s *InstanceTypeAvailableSystemDisk) Compatible(systemDisks []string) bool {
 	for sdi := range systemDisks {
-		if !s.availableSystemDisk.Has(systemDisks[sdi]) {
-			return false
+		if s.availableSystemDisk.Has(systemDisks[sdi]) {
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 type Resolver interface {
@@ -147,8 +149,9 @@ func (r *DefaultResolver) FilterInstanceTypesBySystemDisk(ctx context.Context, n
 			DestinationResource: tea.String("SystemDisk"),
 			InstanceType:        tea.String(instanceType.Name),
 		}, func(resource *ecs.DescribeAvailableResourceResponseBodyAvailableZonesAvailableZoneAvailableResourcesAvailableResourceSupportedResourcesSupportedResource) {
-			if *resource.Status == "Available" && *resource.Value != "" {
-				availableSystemDisk.AddAvailableSystemDisk(*resource.Value)
+			if tea.StringValue(resource.Status) == "Available" &&
+				tea.StringValue(resource.Value) != "" {
+				availableSystemDisk.AddAvailableSystemDisk(tea.StringValue(resource.Value))
 			}
 		}); err != nil {
 			errs[i] = err
