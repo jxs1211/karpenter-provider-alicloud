@@ -14,7 +14,6 @@ Run the following command the set the required environment variables before inst
 export ALIBABACLOUD_AK=<your-access-key>
 export ALIBABACLOUD_SK=<your-secret-key>
 export CLUSTER_REGION=<your-region-id>
-export CLUSTER_NAME=<your-cluster-name>
 export CLUSTER_ID=<your-cluster-id>
 ```
 
@@ -28,7 +27,6 @@ helm upgrade karpenter karpenter-provider-alibabacloud/karpenter --install \
   --set "alibabacloud.access_key_id"=${ALIBABACLOUD_AK} \
   --set "alibabacloud.access_key_secret"=${ALIBABACLOUD_SK} \
   --set "alibabacloud.region_id"=${CLUSTER_REGION} \
-  --set controller.settings.clusterName=${CLUSTER_NAME} \
   --set controller.settings.clusterID=${CLUSTER_ID} \
   --wait
 ```
