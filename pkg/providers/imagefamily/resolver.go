@@ -25,7 +25,9 @@ import (
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/patrickmn/go-cache"
+	"go.uber.org/multierr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 
@@ -120,20 +122,23 @@ func GetImageFamily(family string) ImageFamily {
 func (r *DefaultResolver) FilterInstanceTypesBySystemDisk(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, instanceTypes []*cloudprovider.InstanceType) []*cloudprovider.InstanceType {
 	r.Lock()
 	defer r.Unlock()
+	var result []*cloudprovider.InstanceType
+	var resultMutex sync.Mutex
 
 	if nodeClass.Spec.SystemDisk == nil || nodeClass.Spec.SystemDisk.Categories == nil {
 		return instanceTypes
 	}
 	expectDiskCategories := nodeClass.Spec.SystemDisk.Categories
-
-	// TODO: make following request parallel
-	var result []*cloudprovider.InstanceType
-	for i, instanceType := range instanceTypes {
+	errs := make([]error, len(instanceTypes))
+	workqueue.ParallelizeUntil(ctx, 50, len(instanceTypes), func(i int) {
+		instanceType := instanceTypes[i]
 		if availableSystemDisk, ok := r.cache.Get(instanceType.Name); ok {
 			if availableSystemDisk.(*InstanceTypeAvailableSystemDisk).Compatible(expectDiskCategories) {
+				resultMutex.Lock()
 				result = append(result, instanceTypes[i])
+				resultMutex.Unlock()
 			}
-			continue
+			return
 		}
 
 		availableSystemDisk := newInstanceTypeAvailableSystemDisk()
@@ -146,16 +151,20 @@ func (r *DefaultResolver) FilterInstanceTypesBySystemDisk(ctx context.Context, n
 				availableSystemDisk.AddAvailableSystemDisk(*resource.Value)
 			}
 		}); err != nil {
-			log.FromContext(ctx).Error(err, "describe available system disk failed")
-			continue
+			errs[i] = err
+			return
 		}
-
 		if availableSystemDisk.Compatible(expectDiskCategories) {
+			resultMutex.Lock()
 			result = append(result, instanceTypes[i])
+			resultMutex.Unlock()
 		} else {
-			log.FromContext(ctx).V(1).Info("%s is not compatible with NodeClass %s SystemDisk %v", instanceType, nodeClass.Name, expectDiskCategories)
+			errs[i] = fmt.Errorf("%s is not compatible with NodeClass %s SystemDisk %v", instanceType.Name, nodeClass.Name, expectDiskCategories)
 		}
 		r.cache.SetDefault(instanceType.Name, availableSystemDisk)
+	})
+	if err := multierr.Combine(errs...); err != nil {
+		log.FromContext(ctx).V(1).Info("filter instance types by system disk", "errs", err)
 	}
 	return result
 }
