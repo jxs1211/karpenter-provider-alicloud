@@ -71,6 +71,10 @@ type ECSNodeClassSpec struct {
 	// +kubebuilder:validation:XValidation:message="tag contains a restricted tag matching karpenter.k8s.alibabacloud/ecsnodeclass",rule="self.all(k, k !='karpenter.k8s.alibabacloud/ecsnodeclass')"
 	// +optional
 	Tags map[string]string `json:"tags,omitempty"`
+	// ResourceGroupID is the resource group id in ECS
+	// +kubebuilder:validation:Pattern:="rg-[0-9a-z]+"
+	// +optional
+	ResourceGroupID string `json:"resourceGroupId,omitempty"`
 }
 
 // VSwitchSelectorTerm defines selection logic for a vSwitch used by Karpenter to launch nodes.
