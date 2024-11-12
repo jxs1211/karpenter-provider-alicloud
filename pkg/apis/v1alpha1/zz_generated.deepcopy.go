@@ -111,11 +111,6 @@ func (in *ECSNodeClassSpec) DeepCopyInto(out *ECSNodeClassSpec) {
 		*out = make([]ImageSelectorTerm, len(*in))
 		copy(*out, *in)
 	}
-	if in.UserData != nil {
-		in, out := &in.UserData, &out.UserData
-		*out = new(string)
-		**out = **in
-	}
 	if in.KubeletConfiguration != nil {
 		in, out := &in.KubeletConfiguration, &out.KubeletConfiguration
 		*out = new(KubeletConfiguration)
@@ -363,24 +358,9 @@ func (in *SystemDisk) DeepCopyInto(out *SystemDisk) {
 		*out = new(int32)
 		**out = **in
 	}
-	if in.DiskName != nil {
-		in, out := &in.DiskName, &out.DiskName
-		*out = new(string)
-		**out = **in
-	}
 	if in.PerformanceLevel != nil {
 		in, out := &in.PerformanceLevel, &out.PerformanceLevel
 		*out = new(string)
-		**out = **in
-	}
-	if in.AutoSnapshotPolicyID != nil {
-		in, out := &in.AutoSnapshotPolicyID, &out.AutoSnapshotPolicyID
-		*out = new(string)
-		**out = **in
-	}
-	if in.BurstingEnabled != nil {
-		in, out := &in.BurstingEnabled, &out.BurstingEnabled
-		*out = new(bool)
 		**out = **in
 	}
 	return

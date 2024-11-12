@@ -51,11 +51,6 @@ type ECSNodeClassSpec struct {
 	// +kubebuilder:validation:MaxItems:=30
 	// +required
 	ImageSelectorTerms []ImageSelectorTerm `json:"imageSelectorTerms" hash:"ignore"`
-	// UserData to be applied to the provisioned nodes.
-	// It must be in the appropriate format based on the ImageFamily in use. Karpenter will merge certain fields into
-	// this UserData to ensure nodes are being provisioned with the correct configuration.
-	// +optional
-	UserData *string `json:"userData,omitempty"`
 	// KubeletConfiguration defines args to be used when configuring kubelet on provisioned nodes.
 	// They are a vswitch of the upstream types, recognizing not all options may be supported.
 	// Wherever possible, the types and names should reflect the upstream kubelet types.
@@ -212,27 +207,15 @@ type SystemDisk struct {
 	// +kubebuilder:validation:XValidation:message="size invalid",rule="self >= 20"
 	// +optional
 	Size *int32 `json:"size,omitempty"`
-	// The name of the system disk.
-	// The name must be 2 to 128 characters in length.
-	// The name must start with a letter and cannot start with http:// or https://.
-	// The name can contain letters, digits, colons (:), underscores (_), and hyphens (-).
-	// +kubebuilder:validation:XValidation:message="format invalid",rule="!self.startsWith('http') && self.size() >= 2 && self.size() <= 128"
-	// +kubebuilder:validation:Pattern="^[A-Za-z][A-Za-z0-9:_-]*$"
-	// +optional
-	DiskName *string `json:"diskName,omitempty"`
 	// The performance level of the ESSD to use as the system disk. Default value: PL0.
 	// Valid values:
 	//   * PL0: A single ESSD can deliver up to 10,000 random read/write IOPS.
 	//   * PL1: A single ESSD can deliver up to 50,000 random read/write IOPS.
 	//   * PL2: A single ESSD can deliver up to 100,000 random read/write IOPS.
 	//   * PL3: A single ESSD can deliver up to 1,000,000 random read/write IOPS.
+	// This will be supported soon
 	// +kubebuilder:validation:Enum:={PL0,PL1,PL2,PL3}
 	PerformanceLevel *string `json:"performanceLevel,omitempty"`
-	// The ID of the automatic snapshot policy to apply to the system disk.
-	AutoSnapshotPolicyID *string `json:"autoSnapshotPolicyId,omitempty"`
-	// Specifies whether to enable the performance burst feature for the system disk
-	BurstingEnabled *bool `json:"burstingEnabled,omitempty"`
-	// TODO: add ProvisionedIops or Iops
 }
 
 // ECSNodeClass is the Schema for the ECSNodeClass API

@@ -257,14 +257,6 @@ spec:
               systemDisk:
                 description: SystemDisk to be applied to provisioned nodes.
                 properties:
-                  autoSnapshotPolicyId:
-                    description: The ID of the automatic snapshot policy to apply
-                      to the system disk.
-                    type: string
-                  burstingEnabled:
-                    description: Specifies whether to enable the performance burst
-                      feature for the system disk
-                    type: boolean
                   categories:
                     description: |-
                       The category of the system disk (for example, cloud and cloud_ssd).
@@ -273,18 +265,6 @@ spec:
                     items:
                       type: string
                     type: array
-                  diskName:
-                    description: |-
-                      The name of the system disk.
-                      The name must be 2 to 128 characters in length.
-                      The name must start with a letter and cannot start with http:// or https://.
-                      The name can contain letters, digits, colons (:), underscores (_), and hyphens (-).
-                    pattern: ^[A-Za-z][A-Za-z0-9:_-]*$
-                    type: string
-                    x-kubernetes-validations:
-                    - message: format invalid
-                      rule: '!self.startsWith(''http'') && self.size() >= 2 && self.size()
-                        <= 128'
                   performanceLevel:
                     description: |-
                       The performance level of the ESSD to use as the system disk. Default value: PL0.
@@ -293,6 +273,7 @@ spec:
                         * PL1: A single ESSD can deliver up to 50,000 random read/write IOPS.
                         * PL2: A single ESSD can deliver up to 100,000 random read/write IOPS.
                         * PL3: A single ESSD can deliver up to 1,000,000 random read/write IOPS.
+                      This will be supported soon
                     enum:
                     - PL0
                     - PL1
@@ -330,12 +311,6 @@ spec:
                   rule: self.all(k, k !='karpenter.sh/nodeclaim')
                 - message: tag contains a restricted tag matching karpenter.k8s.alibabacloud/ecsnodeclass
                   rule: self.all(k, k !='karpenter.k8s.alibabacloud/ecsnodeclass')
-              userData:
-                description: |-
-                  UserData to be applied to the provisioned nodes.
-                  It must be in the appropriate format based on the ImageFamily in use. Karpenter will merge certain fields into
-                  this UserData to ensure nodes are being provisioned with the correct configuration.
-                type: string
               vSwitchSelectorTerms:
                 description: VSwitchSelectorTerms is a list of or vSwitch selector
                   terms. The terms are ORed.
