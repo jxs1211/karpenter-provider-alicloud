@@ -487,6 +487,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 
 			// TODO: AutoProvisioningGroup is not compatible with SecurityGroupIds, waiting for Aliyun developers to fix it,
 			// so here we only take the first one.
+			ResourceGroupId:            tea.String(nodeClass.Spec.ResourceGroupID),
 			SecurityGroupId:            securityGroupIDs[0],
 			SystemDiskSize:             systemDisk.Size,
 			SystemDiskPerformanceLevel: systemDisk.PerformanceLevel,
