@@ -487,9 +487,10 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 
 			// TODO: AutoProvisioningGroup is not compatible with SecurityGroupIds, waiting for Aliyun developers to fix it,
 			// so here we only take the first one.
-			SecurityGroupId: securityGroupIDs[0],
-			SystemDiskSize:  systemDisk.Size,
-			Tag:             reqTags,
+			SecurityGroupId:            securityGroupIDs[0],
+			SystemDiskSize:             systemDisk.Size,
+			SystemDiskPerformanceLevel: systemDisk.PerformanceLevel,
+			Tag:                        reqTags,
 		},
 
 		SystemDiskConfig: lo.Map(systemDisk.Categories, func(category string, _ int) *ecsclient.CreateAutoProvisioningGroupRequestSystemDiskConfig {

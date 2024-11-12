@@ -215,6 +215,7 @@ type SystemDisk struct {
 	//   * PL3: A single ESSD can deliver up to 1,000,000 random read/write IOPS.
 	// This will be supported soon
 	// +kubebuilder:validation:Enum:={PL0,PL1,PL2,PL3}
+	// +kubebuilder:default:=PL0
 	PerformanceLevel *string `json:"performanceLevel,omitempty"`
 }
 
