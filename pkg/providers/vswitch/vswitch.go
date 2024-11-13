@@ -47,6 +47,8 @@ type Provider interface {
 }
 
 type DefaultProvider struct {
+	region string
+
 	sync.Mutex
 	vpcapi                  *vpc.Client
 	cache                   *cache.Cache
@@ -61,8 +63,9 @@ type VSwitch struct {
 	AvailableIPAddressCount int64
 }
 
-func NewDefaultProvider(vpcapi *vpc.Client, cache *cache.Cache, availableIPAddressCache *cache.Cache) *DefaultProvider {
+func NewDefaultProvider(region string, vpcapi *vpc.Client, cache *cache.Cache, availableIPAddressCache *cache.Cache) *DefaultProvider {
 	return &DefaultProvider{
+		region: region,
 		vpcapi: vpcapi,
 		cm:     pretty.NewChangeMonitor(),
 		// TODO: Remove cache when we utilize the resolved vSwitches from the ECSNodeClass.status
@@ -255,6 +258,7 @@ func (p *DefaultProvider) LivenessProbe(_ *http.Request) error {
 func (p *DefaultProvider) describeVSwitches(tags []*vpc.DescribeVSwitchesRequestTag, id *string, process func(*vpc.DescribeVSwitchesResponseBodyVSwitchesVSwitch)) error {
 	runtime := &util.RuntimeOptions{}
 	describeVSwitchesRequest := &vpc.DescribeVSwitchesRequest{
+		RegionId:  tea.String(p.region),
 		Tag:       tags,
 		VSwitchId: id,
 		PageSize:  tea.Int32(50),
