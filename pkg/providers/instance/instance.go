@@ -107,7 +107,7 @@ func (p *DefaultProvider) Create(ctx context.Context, nodeClass *v1alpha1.ECSNod
 
 func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error) {
 	describeInstancesRequest := &ecsclient.DescribeInstancesRequest{
-		RegionId:    &p.region,
+		RegionId:    tea.String(p.region),
 		InstanceIds: tea.String("[\"" + id + "\"]"),
 	}
 	runtime := &util.RuntimeOptions{}
@@ -144,7 +144,7 @@ func (p *DefaultProvider) List(ctx context.Context) ([]*Instance, error) {
 				Value: tea.String("owned"),
 			},
 		},
-		RegionId: p.ecsClient.RegionId,
+		RegionId: tea.String(p.region),
 	}
 
 	runtime := &util.RuntimeOptions{}
@@ -224,7 +224,7 @@ func (p *DefaultProvider) CreateTags(ctx context.Context, id string, tags map[st
 	}
 
 	addTagsRequest := &ecsclient.AddTagsRequest{
-		RegionId:     &p.region,
+		RegionId:     tea.String(p.region),
 		ResourceType: tea.String("instance"),
 		ResourceId:   tea.String(id),
 		Tag:          ecsTags,
