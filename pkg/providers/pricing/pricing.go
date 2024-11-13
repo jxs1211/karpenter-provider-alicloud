@@ -90,8 +90,7 @@ const (
 	// defaultPriceQueryClient defines the default query endpoint
 	// we do not use the alibabacloud sdk because it has a rate limit which not satisfied with our request frequency
 	// you can build your own query server with repo: https://github.com/cloudpilot-ai/priceserver
-	// TODO: update to production endpoint latter
-	defaultPriceQueryEndpoint = "https://pre-price.cloudpilot.ai"
+	defaultPriceQueryEndpoint = "https://price.cloudpilot.ai"
 )
 
 func NewDefaultProvider(ctx context.Context, region string) (*DefaultProvider, error) {
