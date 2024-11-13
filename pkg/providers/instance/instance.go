@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net/http"
 	"strings"
 
 	ecsclient "github.com/alibabacloud-go/ecs-20140526/v4/client"
@@ -360,6 +361,9 @@ func (p *DefaultProvider) launchInstance(ctx context.Context, nodeClass *v1alpha
 	resp, err := p.ecsClient.CreateAutoProvisioningGroupWithOptions(createAutoProvisioningGroupRequest, runtime)
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating auto provisioning group, %w", err)
+	}
+	if resp == nil || tea.Int32Value(resp.StatusCode) != http.StatusOK {
+		return nil, nil, fmt.Errorf("creating auto provision group, %s", tea.Prettify(resp))
 	}
 
 	return resp.Body.LaunchResults.LaunchResult[0], createAutoProvisioningGroupRequest, nil
