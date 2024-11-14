@@ -48,6 +48,8 @@ spec:
               value: {{ .Values.controller.settings.clusterID }}
             - name: CLUSTER_CNI
               value: {{ .Values.controller.settings.clusterCNI }}
+            - name: TELEMETRY_SHARE
+              value: {{ .Values.controller.settings.telemetryShare }}
             - name: KUBERNETES_MIN_VERSION
               value: "1.26.0"
             {{- with .Values.logLevel }}
