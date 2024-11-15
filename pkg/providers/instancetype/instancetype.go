@@ -366,28 +366,24 @@ func (p *DefaultProvider) createOfferings(_ context.Context, instanceType string
 
 		if odOK {
 			isUnavailable := p.unavailableOfferings.IsUnavailable(instanceType, zone.ID, karpv1.CapacityTypeOnDemand)
-			offeringAvailable := !isUnavailable && odOK && zone.Available
+			offeringAvailable := !isUnavailable && zone.Available
 
 			offerings = append(offerings, p.createOffering(zone.ID, karpv1.CapacityTypeOnDemand, odPrice, offeringAvailable))
 		}
 
 		if spotOK {
 			isUnavailable := p.unavailableOfferings.IsUnavailable(instanceType, zone.ID, karpv1.CapacityTypeSpot)
-			offeringAvailable := !isUnavailable && spotOK && zone.Available
+			offeringAvailable := !isUnavailable && zone.Available
 
 			offerings = append(offerings, p.createOffering(zone.ID, karpv1.CapacityTypeSpot, spotPrice, offeringAvailable))
 		}
-	}
-
-	if len(offerings) == 0 {
-		return nil
 	}
 
 	return offerings
 }
 
 func (p *DefaultProvider) createOffering(zone, capacityType string, price float64, available bool) cloudprovider.Offering {
-	offering := cloudprovider.Offering{
+	return cloudprovider.Offering{
 		Requirements: scheduling.NewRequirements(
 			scheduling.NewRequirement(karpv1.CapacityTypeLabelKey, corev1.NodeSelectorOpIn, capacityType),
 			scheduling.NewRequirement(corev1.LabelTopologyZone, corev1.NodeSelectorOpIn, zone),
@@ -396,8 +392,6 @@ func (p *DefaultProvider) createOffering(zone, capacityType string, price float6
 		Price:     price,
 		Available: available,
 	}
-
-	return offering
 }
 
 func (p *DefaultProvider) Reset() {

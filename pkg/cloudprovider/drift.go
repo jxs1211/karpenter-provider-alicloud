@@ -45,7 +45,7 @@ func (c *CloudProvider) isNodeClassDrifted(ctx context.Context, nodeClaim *karpv
 	if err != nil {
 		return "", err
 	}
-	securitygroupDrifted, err := c.areSecurityGroupsDrifted(instance, nodeClass)
+	securityGroupDrifted, err := c.areSecurityGroupsDrifted(instance, nodeClass)
 	if err != nil {
 		return "", fmt.Errorf("calculating securitygroup drift, %w", err)
 	}
@@ -53,7 +53,7 @@ func (c *CloudProvider) isNodeClassDrifted(ctx context.Context, nodeClaim *karpv
 	if err != nil {
 		return "", fmt.Errorf("calculating vSwitch drift, %w", err)
 	}
-	drifted := lo.FindOrElse([]cloudprovider.DriftReason{securitygroupDrifted, vSwitchDrifted}, "", func(i cloudprovider.DriftReason) bool {
+	drifted := lo.FindOrElse([]cloudprovider.DriftReason{securityGroupDrifted, vSwitchDrifted}, "", func(i cloudprovider.DriftReason) bool {
 		return string(i) != ""
 	})
 	return drifted, nil

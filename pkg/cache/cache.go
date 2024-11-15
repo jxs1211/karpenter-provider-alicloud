@@ -27,7 +27,7 @@ const (
 	// DO NOT CHANGE THIS VALUE WITHOUT DUE CONSIDERATION
 	DefaultTTL = time.Minute
 	// KubernetesVersionTTL is the time before the detected Kubernetes version is removed from cache,
-	// to be re-detected next time it is needed.
+	// to be re-detected the next time it is needed.
 	KubernetesVersionTTL = 15 * time.Minute
 	// UnavailableOfferingsTTL is the time before offerings that were marked as unavailable
 	// are removed from the cache and are available for launch again

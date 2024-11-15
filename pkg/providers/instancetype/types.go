@@ -296,6 +296,7 @@ func pods(_ context.Context,
 	if lo.FromPtr(podsPerCore) > 0 {
 		count = lo.Min([]int64{int64(lo.FromPtr(podsPerCore) * lo.FromPtr(info.CpuCoreCount)), count})
 	}
+
 	return resources.Quantity(fmt.Sprint(count))
 }
 
@@ -349,19 +350,6 @@ func privateIPv4Address(info *ecsclient.DescribeInstanceTypesResponseBodyInstanc
 	return resources.Quantity(fmt.Sprint(*info.EniPrivateIpAddressQuantity * (*info.EniQuantity)))
 }
 
-func getInstanceBandwidth(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType) int64 {
-	bandwidthRx := int32(0)
-	bandwidthTx := int32(0)
-	if info.InstanceBandwidthRx != nil {
-		bandwidthRx = *info.InstanceBandwidthRx
-	}
-	if info.InstanceBandwidthTx != nil {
-		bandwidthTx = *info.InstanceBandwidthTx
-	}
-
-	if bandwidthRx > bandwidthTx {
-		return int64(bandwidthRx)
-	}
-
-	return int64(bandwidthTx)
+func getInstanceBandwidth(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType) int32 {
+	return max(lo.FromPtr(info.InstanceBandwidthRx), lo.FromPtr(info.InstanceBandwidthTx))
 }

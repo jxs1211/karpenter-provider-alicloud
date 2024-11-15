@@ -10,7 +10,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  minAvailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
   selector:
     matchLabels:
     {{- include "karpenter.selectorLabels" . | nindent 6 }}

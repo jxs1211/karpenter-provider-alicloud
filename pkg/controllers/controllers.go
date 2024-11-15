@@ -53,12 +53,12 @@ func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock, r
 	cloudProvider cloudprovider.CloudProvider,
 	instanceProvider instance.Provider, instanceTypeProvider instancetype.Provider,
 	pricingProvider pricing.Provider,
-	vSwitchProvider vswitch.Provider, securitygroupProvider securitygroup.Provider,
+	vSwitchProvider vswitch.Provider, securityGroupProvider securitygroup.Provider,
 	imageProvider imagefamily.Provider) []controller.Controller {
 
 	controllers := []controller.Controller{
 		nodeclasshash.NewController(kubeClient),
-		nodeclaasstatus.NewController(kubeClient, vSwitchProvider, securitygroupProvider, imageProvider),
+		nodeclaasstatus.NewController(kubeClient, vSwitchProvider, securityGroupProvider, imageProvider),
 		nodeclasstermination.NewController(kubeClient, recorder),
 		controllerspricing.NewController(pricingProvider),
 		nodeclaimgarbagecollection.NewController(kubeClient, cloudProvider),
