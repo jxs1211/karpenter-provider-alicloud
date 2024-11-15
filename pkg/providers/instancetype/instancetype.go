@@ -42,6 +42,7 @@ import (
 	kcache "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/ack"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/pricing"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/alierrors"
 )
 
 type Provider interface {
@@ -270,8 +271,10 @@ func (p *DefaultProvider) UpdateInstanceTypeOfferings(ctx context.Context) error
 		return err
 	}
 
-	if resp == nil || resp.Body == nil || resp.Body.AvailableZones == nil || len(resp.Body.AvailableZones.AvailableZone) == 0 {
+	if resp == nil || resp.Body == nil {
 		return errors.New("DescribeAvailableResourceWithOptions failed to return any instance types")
+	} else if resp.Body.AvailableZones == nil || len(resp.Body.AvailableZones.AvailableZone) == 0 {
+		return alierrors.WithRequestID(tea.StringValue(resp.Body.RequestId), errors.New("DescribeAvailableResourceWithOptions failed to return any instance types"))
 	}
 
 	for _, az := range resp.Body.AvailableZones.AvailableZone {

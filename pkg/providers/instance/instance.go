@@ -98,10 +98,6 @@ func (p *DefaultProvider) Create(ctx context.Context, nodeClass *v1alpha1.ECSNod
 		return nil, err
 	}
 
-	if launchInstance.InstanceIds == nil || len(launchInstance.InstanceIds.InstanceId) == 0 {
-		return nil, fmt.Errorf("failed to launch instance, code: %s, message: %s", tea.StringValue(launchInstance.ErrorCode), tea.StringValue(launchInstance.ErrorMsg))
-	}
-
 	return NewInstanceFromProvisioningGroup(launchInstance, createAutoProvisioningGroupRequest, p.region), nil
 }
 
@@ -118,16 +114,16 @@ func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error)
 	}
 
 	if resp == nil || resp.Body == nil || resp.Body.Instances == nil {
-		return nil, fmt.Errorf("failed to get instance %s", id)
+		return nil, fmt.Errorf("failed to get instance %s, %s", id, tea.Prettify(resp))
 	}
 
 	// If the instance size is 0, which means it's deleted, return notfound error
 	if len(resp.Body.Instances.Instance) == 0 {
-		return nil, cloudprovider.NewNodeClaimNotFoundError(fmt.Errorf("expected a single instance with id %s", id))
+		return nil, cloudprovider.NewNodeClaimNotFoundError(alierrors.WithRequestID(tea.StringValue(resp.Body.RequestId), fmt.Errorf("expected a single instance with id %s", id)))
 	}
 
 	if len(resp.Body.Instances.Instance) != 1 {
-		return nil, fmt.Errorf("expected a single instance with id %s, got %d", id, len(resp.Body.Instances.Instance))
+		return nil, alierrors.WithRequestID(tea.StringValue(resp.Body.RequestId), fmt.Errorf("expected a single instance with id %s, got %d", id, len(resp.Body.Instances.Instance)))
 	}
 
 	return NewInstance(resp.Body.Instances.Instance[0]), nil
@@ -362,11 +358,38 @@ func (p *DefaultProvider) launchInstance(ctx context.Context, nodeClass *v1alpha
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating auto provisioning group, %w", err)
 	}
-	if resp == nil || tea.Int32Value(resp.StatusCode) != http.StatusOK {
-		return nil, nil, fmt.Errorf("creating auto provision group, %s", tea.Prettify(resp))
+
+	if err := createAutoProvisioningGroupResponseHandler(resp); err != nil {
+		return nil, nil, err
 	}
 
 	return resp.Body.LaunchResults.LaunchResult[0], createAutoProvisioningGroupRequest, nil
+}
+
+func createAutoProvisioningGroupResponseHandler(resp *ecsclient.CreateAutoProvisioningGroupResponse) error {
+	if resp == nil || resp.Body == nil || resp.Body.LaunchResults == nil {
+		return fmt.Errorf("invalid response when creating auto provision group: %s", tea.Prettify(resp))
+	}
+
+	if tea.Int32Value(resp.StatusCode) != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d when creating auto provision group: %s",
+			tea.Int32Value(resp.StatusCode), tea.Prettify(resp))
+	}
+
+	launchResults := resp.Body.LaunchResults.LaunchResult
+	if len(launchResults) == 0 {
+		return fmt.Errorf("no launch results found in response: %s", tea.Prettify(resp))
+	}
+
+	launchResult := launchResults[0]
+
+	if launchResult.InstanceIds == nil || len(launchResult.InstanceIds.InstanceId) == 0 {
+		return alierrors.WithRequestID(tea.StringValue(resp.Body.RequestId),
+			fmt.Errorf("failed to launch instance: errorCode=%s, errorMessage=%s",
+				tea.StringValue(launchResult.ErrorCode), tea.StringValue(launchResult.ErrorMsg)))
+	}
+
+	return nil
 }
 
 // getCapacityType selects spot if both constraints are flexible and there is an

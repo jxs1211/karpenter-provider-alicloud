@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
 
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/alierrors"
 )
 
 var DefaultSystemDisk = v1alpha1.SystemDisk{
@@ -178,8 +179,10 @@ func (r *DefaultResolver) describeAvailableSystemDisk(request *ecs.DescribeAvail
 	output, err := r.ecsapi.DescribeAvailableResourceWithOptions(request, runtime)
 	if err != nil {
 		return err
-	} else if output == nil || output.Body == nil || output.Body.AvailableZones == nil {
+	} else if output == nil || output.Body == nil {
 		return fmt.Errorf("unexpected null value was returned")
+	} else if output.Body.AvailableZones == nil {
+		return alierrors.WithRequestID(tea.StringValue(output.Body.RequestId), fmt.Errorf("unexpected null value was returned"))
 	}
 	for _, az := range output.Body.AvailableZones.AvailableZone {
 		// todo: ClosedWithStock
