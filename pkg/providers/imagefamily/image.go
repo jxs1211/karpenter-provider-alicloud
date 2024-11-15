@@ -142,7 +142,7 @@ func (p *DefaultProvider) getImagesWithAlias(k8sVersion string) (Images, error) 
 		return nil, fmt.Errorf("failed to describe k8s version metadata %w", err)
 	}
 
-	if len(resp.Body) == 0 {
+	if resp == nil || resp.Body == nil || len(resp.Body) == 0 {
 		return nil, nil
 	}
 
@@ -178,7 +178,7 @@ func (p *DefaultProvider) getImagesWithID(id string) (Images, error) {
 		return nil, fmt.Errorf("failed to get images through id %s", id)
 	}
 
-	if resp.Body == nil || resp.Body.Images == nil || len(resp.Body.Images.Image) == 0 {
+	if resp == nil || resp.Body == nil || resp.Body.Images == nil || len(resp.Body.Images.Image) == 0 {
 		return nil, nil
 	}
 

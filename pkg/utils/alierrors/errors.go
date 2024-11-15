@@ -18,6 +18,7 @@ package alierrors
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/alibabacloud-go/tea/tea"
@@ -32,4 +33,12 @@ func IsNotFound(err error) bool {
 	}
 
 	return false
+}
+
+func WithRequestID(requestID string, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return fmt.Errorf("requestId: %s, %w", requestID, err)
 }

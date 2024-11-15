@@ -76,7 +76,7 @@ func (p *DefaultProvider) GetClusterCNI(_ context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to describe cluster: %w", err)
 	}
-	if response.Body == nil || response.Body.MetaData == nil {
+	if response == nil || response.Body == nil || response.Body.MetaData == nil {
 		return "", fmt.Errorf("empty cluster response")
 	}
 	// Parse metadata JSON string

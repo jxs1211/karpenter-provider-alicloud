@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/karpenter/pkg/utils/pretty"
 
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/alierrors"
 )
 
 type Provider interface {
@@ -109,9 +110,12 @@ func (p *DefaultProvider) describeSecurityGroups(request *ecs.DescribeSecurityGr
 		output, err := p.ecsapi.DescribeSecurityGroupsWithOptions(request, runtime)
 		if err != nil {
 			return err
-		} else if output.Body == nil || output.Body.SecurityGroups == nil {
+		} else if output == nil || output.Body == nil {
 			return fmt.Errorf("unexpected null value was returned")
+		} else if output.Body.SecurityGroups == nil {
+			return alierrors.WithRequestID(tea.StringValue(output.Body.RequestId), fmt.Errorf("unexpected null value was returned"))
 		}
+
 		for i := range output.Body.SecurityGroups.SecurityGroup {
 			process(output.Body.SecurityGroups.SecurityGroup[i])
 		}

@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/karpenter/pkg/utils/pretty"
 
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/alierrors"
 )
 
 type Provider interface {
@@ -268,8 +269,10 @@ func (p *DefaultProvider) describeVSwitches(tags []*vpc.DescribeVSwitchesRequest
 		output, err := p.vpcapi.DescribeVSwitchesWithOptions(describeVSwitchesRequest, runtime)
 		if err != nil {
 			return err
-		} else if output.Body == nil || output.Body.TotalCount == nil || output.Body.VSwitches == nil {
+		} else if output == nil || output.Body == nil {
 			return fmt.Errorf("unexpected null value was returned")
+		} else if output.Body.TotalCount == nil || output.Body.VSwitches == nil {
+			return alierrors.WithRequestID(tea.StringValue(output.Body.RequestId), fmt.Errorf("unexpected null value was returned"))
 		}
 
 		for i := range output.Body.VSwitches.VSwitch {
