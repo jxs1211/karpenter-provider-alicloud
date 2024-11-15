@@ -40,7 +40,7 @@ Karpenter observes the aggregate resource requests of unscheduled pods and makes
 
 Full documentation is available at [karpenter alibabacloud provider docs](https://docs.cloudpilot.ai/karpenter/alibabacloud/).
 
-## Commubity
+## Community
 
 We want your contributions and suggestions! One of the easiest ways to contribute is to participate in discussions on the Github Issues/Discussion, chat on IM or the bi-weekly community calls.
 
