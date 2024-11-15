@@ -46,9 +46,11 @@ func (sg *SecurityGroup) Reconcile(ctx context.Context, nodeClass *v1alpha1.ECSN
 		// Returning 'ok' in this case means that the ecsnodeclass will remain in an unready state until the component is restarted.
 		return reconcile.Result{RequeueAfter: time.Second * 15}, nil
 	}
+
 	sort.Slice(securityGroups, func(i, j int) bool {
 		return *securityGroups[i].SecurityGroupId < *securityGroups[j].SecurityGroupId
 	})
+
 	nodeClass.Status.SecurityGroups = lo.Map(securityGroups, func(securityGroup *ecsclient.DescribeSecurityGroupsResponseBodySecurityGroupsSecurityGroup, _ int) v1alpha1.SecurityGroup {
 		return v1alpha1.SecurityGroup{
 			ID:   *securityGroup.SecurityGroupId,

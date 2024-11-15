@@ -33,7 +33,7 @@ alibabacloud:
   region_id: ""
 
 podDisruptionBudget:
-  maxUnavailable: 1
+  minAvailable: 1
 
 controller:
   replicaCount: 2

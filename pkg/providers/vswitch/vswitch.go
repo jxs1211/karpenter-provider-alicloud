@@ -121,7 +121,8 @@ func (p *DefaultProvider) List(ctx context.Context, nodeClass *v1alpha1.ECSNodeC
 			// we are accepting it for now, as this will be an insignificant amount of memory
 			p.availableIPAddressCache.SetDefault(lo.FromPtr(vSwitch.VSwitchId), lo.FromPtr(vSwitch.AvailableIpAddressCount))
 
-			delete(p.inflightIPs, lo.FromPtr(vSwitch.VSwitchId)) // remove any previously tracked IP addresses since we just refreshed from ECS
+			// remove any previously tracked IP addresses since we just refreshed from ECS
+			delete(p.inflightIPs, lo.FromPtr(vSwitch.VSwitchId))
 		}); err != nil {
 			return nil, fmt.Errorf("describing vSwitches %s, %w", pretty.Concise(selectorTerms), err)
 		}

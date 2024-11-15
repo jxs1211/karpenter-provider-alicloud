@@ -92,9 +92,7 @@ func (c *Controller) Register(ctx context.Context, m manager.Manager) error {
 		Named("interruption").
 		For(&corev1.Node{}).
 		WithEventFilter(predicate.NewTypedPredicateFuncs(func(obj client.Object) bool {
-			lables := obj.GetLabels()
-
-			if lable, ok := lables[karpv1.CapacityTypeLabelKey]; !ok || lable != karpv1.CapacityTypeSpot {
+			if label, ok := obj.GetLabels()[karpv1.CapacityTypeLabelKey]; !ok || label != karpv1.CapacityTypeSpot {
 				return false
 			}
 

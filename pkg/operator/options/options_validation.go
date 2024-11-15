@@ -22,13 +22,13 @@ import (
 	"go.uber.org/multierr"
 )
 
-func (o Options) Validate() error {
+func (o *Options) Validate() error {
 	return multierr.Combine(
 		o.validateRequiredFields(),
 	)
 }
 
-func (o Options) validateRequiredFields() error {
+func (o *Options) validateRequiredFields() error {
 	if o.ClusterID == "" {
 		return fmt.Errorf("missing field, cluster-id")
 	}
