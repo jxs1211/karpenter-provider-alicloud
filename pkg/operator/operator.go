@@ -93,6 +93,7 @@ func NewOperator(ctx context.Context, operator *operator.Operator) (context.Cont
 	ackProvider := ack.NewDefaultProvider(clusterID, ackClient, cache.New(alicache.ClusterAttachScriptTTL, alicache.DefaultCleanupInterval))
 
 	instanceProvider := instance.NewDefaultProvider(
+		ctx,
 		region,
 		ecsClient,
 		imageResolver,

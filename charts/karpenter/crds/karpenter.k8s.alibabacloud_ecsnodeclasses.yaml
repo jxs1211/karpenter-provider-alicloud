@@ -212,6 +212,10 @@ spec:
                     evictionSoft
                   rule: has(self.evictionSoftGracePeriod) ? self.evictionSoftGracePeriod.all(e,
                     (e in self.evictionSoft)):true
+              resourceGroupId:
+                description: ResourceGroupID is the resource group id in ECS
+                pattern: rg-[0-9a-z]+
+                type: string
               securityGroupSelectorTerms:
                 description: SecurityGroupSelectorTerms is a list of or security group
                   selector terms. The terms are ORed.
@@ -266,6 +270,7 @@ spec:
                       type: string
                     type: array
                   performanceLevel:
+                    default: PL0
                     description: |-
                       The performance level of the ESSD to use as the system disk. Default value: PL0.
                       Valid values:
@@ -311,6 +316,13 @@ spec:
                   rule: self.all(k, k !='karpenter.sh/nodeclaim')
                 - message: tag contains a restricted tag matching karpenter.k8s.alibabacloud/ecsnodeclass
                   rule: self.all(k, k !='karpenter.k8s.alibabacloud/ecsnodeclass')
+              vSwitchSelectionPolicy:
+                default: cheapest
+                description: VSwitchSelectionPolicy is the policy to select the vSwitch.
+                enum:
+                - balanced
+                - cheapest
+                type: string
               vSwitchSelectorTerms:
                 description: VSwitchSelectorTerms is a list of or vSwitch selector
                   terms. The terms are ORed.

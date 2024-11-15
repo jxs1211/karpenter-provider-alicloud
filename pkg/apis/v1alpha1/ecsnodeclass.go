@@ -24,6 +24,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	VSwitchSelectionPolicyBalanced = "balanced"
+)
+
 // ECSNodeClassSpec is the top level specification for the AlibabaCloud Karpenter Provider.
 // This will contain the configuration necessary to launch instances in AlibabaCloud.
 type ECSNodeClassSpec struct {
@@ -34,6 +38,10 @@ type ECSNodeClassSpec struct {
 	// +kubebuilder:validation:MaxItems:=30
 	// +required
 	VSwitchSelectorTerms []VSwitchSelectorTerm `json:"vSwitchSelectorTerms" hash:"ignore"`
+	// VSwitchSelectionPolicy is the policy to select the vSwitch.
+	// +kubebuilder:validation:Enum:=balanced;cheapest
+	// +kubebuilder:default:=cheapest
+	VSwitchSelectionPolicy string `json:"vSwitchSelectionPolicy,omitempty"`
 	// SecurityGroupSelectorTerms is a list of or security group selector terms. The terms are ORed.
 	// +kubebuilder:validation:XValidation:message="securityGroupSelectorTerms cannot be empty",rule="self.size() != 0"
 	// +kubebuilder:validation:XValidation:message="expected at least one, got none, ['tags', 'id', 'name']",rule="self.all(x, has(x.tags) || has(x.id) || has(x.name))"
