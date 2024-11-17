@@ -29,6 +29,7 @@ import (
 
 	ackclient "github.com/alibabacloud-go/cs-20151215/v5/client"
 	"github.com/alibabacloud-go/tea/tea"
+	"github.com/patrickmn/go-cache"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
@@ -47,12 +48,14 @@ type DefaultProvider struct {
 
 	muClusterCNI sync.RWMutex
 	clusterCNI   string
+	cache        *cache.Cache
 }
 
-func NewDefaultProvider(clusterID string, ackClient *ackclient.Client) *DefaultProvider {
+func NewDefaultProvider(clusterID string, ackClient *ackclient.Client, cache *cache.Cache) *DefaultProvider {
 	return &DefaultProvider{
 		clusterID: clusterID,
 		ackClient: ackClient,
+		cache:     cache,
 	}
 }
 
@@ -101,11 +104,13 @@ func (p *DefaultProvider) GetClusterCNI(_ context.Context) (string, error) {
 func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
 	labels map[string]string,
 	kubeletCfg *v1alpha1.KubeletConfiguration) (string, error) {
+	if cachedScript, ok := p.cache.Get(p.clusterID); ok {
+		return p.resolveUserData(cachedScript.(string), labels, kubeletCfg), nil
+	}
+
 	reqPara := &ackclient.DescribeClusterAttachScriptsRequest{
 		KeepInstanceName: tea.Bool(true),
 	}
-
-	// TODO: Build a cache to store this
 	resp, err := p.ackClient.DescribeClusterAttachScripts(tea.String(p.clusterID), reqPara)
 	if err != nil {
 		log.FromContext(ctx).Error(err, "Failed to get node registration script")
@@ -118,6 +123,7 @@ func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
 		return "", err
 	}
 
+	p.cache.SetDefault(p.clusterID, s)
 	return p.resolveUserData(s, labels, kubeletCfg), nil
 }
 

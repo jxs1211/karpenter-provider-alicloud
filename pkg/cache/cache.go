@@ -36,8 +36,8 @@ const (
 	AvailableIPAddressTTL = 5 * time.Minute
 	// InstanceTypeAvailableDiskTTL is the time refresh InstanceType compatible disk
 	InstanceTypeAvailableDiskTTL = 30 * time.Minute
-	// LaunchTemplateTTL is time to drop LaunchTemplate data
-	LaunchTemplateTTL = 5 * time.Minute
+	// ClusterAttachScriptTTL is the time refresh for the cluster attach script
+	ClusterAttachScriptTTL = 6 * time.Hour
 
 	// DefaultCleanupInterval triggers cache cleanup (lazy eviction) at this interval.
 	DefaultCleanupInterval = 1 * time.Minute
