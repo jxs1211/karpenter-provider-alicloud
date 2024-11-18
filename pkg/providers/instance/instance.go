@@ -18,9 +18,11 @@ package instance
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"math"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -31,6 +33,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/samber/lo"
 	"go.uber.org/multierr"
+	"golang.org/x/time/rate"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
@@ -69,16 +72,17 @@ type DefaultProvider struct {
 	imageFamilyResolver imagefamily.Resolver
 	vSwitchProvider     vswitch.Provider
 	ackProvider         ack.Provider
+	createLimiter       *rate.Limiter
 }
 
-func NewDefaultProvider(region string, ecsClient *ecsclient.Client,
+func NewDefaultProvider(ctx context.Context, region string, ecsClient *ecsclient.Client,
 	imageFamilyResolver imagefamily.Resolver, vSwitchProvider vswitch.Provider,
 	ackProvider ack.Provider) *DefaultProvider {
 	p := &DefaultProvider{
-		ecsClient:     ecsClient,
-		region:        region,
-		instanceCache: cache.New(instanceCacheExpiration, instanceCacheExpiration),
-
+		ecsClient:           ecsClient,
+		region:              region,
+		instanceCache:       cache.New(instanceCacheExpiration, instanceCacheExpiration),
+		createLimiter:       rate.NewLimiter(rate.Limit(1), options.FromContext(ctx).APGCreationQPS),
 		imageFamilyResolver: imageFamilyResolver,
 		vSwitchProvider:     vSwitchProvider,
 		ackProvider:         ackProvider,
@@ -90,6 +94,11 @@ func NewDefaultProvider(region string, ecsClient *ecsclient.Client,
 func (p *DefaultProvider) Create(ctx context.Context, nodeClass *v1alpha1.ECSNodeClass, nodeClaim *karpv1.NodeClaim,
 	instanceTypes []*cloudprovider.InstanceType,
 ) (*Instance, error) {
+	// Wait for rate limiter
+	if err := p.createLimiter.Wait(ctx); err != nil {
+		log.FromContext(ctx).Error(err, "rate limit exceeded")
+		return nil, fmt.Errorf("rate limit exceeded: %w", err)
+	}
 	schedulingRequirements := scheduling.NewNodeSelectorRequirementsWithMinValues(nodeClaim.Spec.Requirements...)
 	// Only filter the instances if there are no minValues in the requirement.
 	if !schedulingRequirements.HasMinValues() {
@@ -107,7 +116,6 @@ func (p *DefaultProvider) Create(ctx context.Context, nodeClass *v1alpha1.ECSNod
 
 	return NewInstanceFromProvisioningGroup(launchInstance, createAutoProvisioningGroupRequest, p.region), nil
 }
-
 func (p *DefaultProvider) Get(ctx context.Context, id string) (*Instance, error) {
 	if instance, ok := p.instanceCache.Get(id); ok {
 		return instance.(*Instance), nil
@@ -370,6 +378,7 @@ func (p *DefaultProvider) launchInstance(ctx context.Context, nodeClass *v1alpha
 	}
 
 	runtime := &util.RuntimeOptions{}
+
 	resp, err := p.ecsClient.CreateAutoProvisioningGroupWithOptions(createAutoProvisioningGroupRequest, runtime)
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating auto provisioning group, %w", err)
@@ -470,7 +479,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 			break
 		}
 
-		vSwitchID := p.getVSwitchID(instanceType, zonalVSwitchs, requirements, capacityType)
+		vSwitchID := p.getVSwitchID(instanceType, zonalVSwitchs, requirements, capacityType, nodeClass.Spec.VSwitchSelectionPolicy)
 		if vSwitchID == "" {
 			return nil, errors.New("vSwitchID not found")
 		}
@@ -570,23 +579,29 @@ func (p *DefaultProvider) checkODFallback(nodeClaim *karpv1.NodeClaim, instanceT
 }
 
 func (p *DefaultProvider) getVSwitchID(instanceType *cloudprovider.InstanceType,
-	zonalVSwitchs map[string]*vswitch.VSwitch, reqs scheduling.Requirements, capacityType string) string {
+	zonalVSwitchs map[string]*vswitch.VSwitch, reqs scheduling.Requirements, capacityType string, vSwitchSelectionPolicy string) string {
 	cheapestVSwitchID := ""
 	cheapestPrice := math.MaxFloat64
+
+	if capacityType == karpv1.CapacityTypeOnDemand || vSwitchSelectionPolicy == v1alpha1.VSwitchSelectionPolicyBalanced {
+		// For on-demand, randomly select a zone's vswitch
+		zoneIDs := lo.Keys(zonalVSwitchs)
+		if len(zoneIDs) > 0 {
+			randomIndex, _ := rand.Int(rand.Reader, big.NewInt(int64(len(zoneIDs))))
+			return zonalVSwitchs[zoneIDs[randomIndex.Int64()]].ID
+		}
+	}
 
 	// For different AZ, the spot price may differ. So we need to get the cheapest vSwitch in the zone
 	for i := range instanceType.Offerings {
 		if reqs.Compatible(instanceType.Offerings[i].Requirements, scheduling.AllowUndefinedWellKnownLabels) != nil {
 			continue
 		}
+
 		vswitch, ok := zonalVSwitchs[instanceType.Offerings[i].Requirements.Get(corev1.LabelTopologyZone).Any()]
 		if !ok {
 			continue
 		}
-		if capacityType == karpv1.CapacityTypeOnDemand {
-			return vswitch.ID
-		}
-
 		if instanceType.Offerings[i].Price < cheapestPrice {
 			cheapestVSwitchID = vswitch.ID
 			cheapestPrice = instanceType.Offerings[i].Price
