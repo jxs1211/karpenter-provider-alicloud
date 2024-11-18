@@ -2,7 +2,7 @@
   <p align="center">
     <img src="docs/images/banner.png" height="200">
     <br><br>
-    <i>Scale ACK cluster nodes efficiently and cost-effectively.</i>
+    <i>Autoscale ACK cluster nodes efficiently and cost-effectively.</i>
   </p>
 </div>
 
