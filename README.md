@@ -44,11 +44,15 @@ Full documentation is available at [karpenter alibabacloud provider docs](https:
 
 We want your contributions and suggestions! One of the easiest ways to contribute is to participate in discussions on the Github Issues/Discussion, chat on IM or the bi-weekly community calls.
 
-- [Slack channel](https://kubernetes.slack.com/archives/C02SFFZSA2K)
-- [Community calls](https://calendar.google.com/calendar/u/0?cid=N3FmZGVvZjVoZWJkZjZpMnJrMmplZzVqYmtAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
-- WeChat Group: Broker wechat to add you into the user group.
+* [Slack channel](https://kubernetes.slack.com/archives/C02SFFZSA2K)
+* [Community calls](https://calendar.google.com/calendar/u/0?cid=N3FmZGVvZjVoZWJkZjZpMnJrMmplZzVqYmtAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
+* WeChat Group: Broker wechat to add you into the user group.
 
   <img src="docs/images/wechat-broker.jpg" width="50%">
+
+## Attribution Notice
+
+This project includes code derived from karpenter-provider-aws, used under the Apache License, Version 2.0 terms. We acknowledge the contributions of the original authors and thank them for making their work available. For more details, see the [karpenter-provider-aws](https://github.com/aws/karpenter-provider-aws).
 
 ## Code Of Conduct
 

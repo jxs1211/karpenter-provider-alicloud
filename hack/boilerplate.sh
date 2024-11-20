@@ -4,7 +4,7 @@ set -eu -o pipefail
 for i in $(
   find ./cmd ./pkg ./hack -name "*.go"
 ); do
-  if ! grep -q "CloudPilot AI" $i; then
+  if ! grep -q "Apache License, Version 2.0" $i; then
     cat hack/boilerplate.go.txt $i >$i.new && mv $i.new $i
   fi
 done
