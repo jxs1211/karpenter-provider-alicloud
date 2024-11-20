@@ -22,7 +22,10 @@ import (
 	ecs "github.com/alibabacloud-go/ecs-20140526/v4/client"
 	vpc "github.com/alibabacloud-go/vpc-20160428/v6/client"
 	"github.com/patrickmn/go-cache"
+	"github.com/samber/lo"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/karpenter/pkg/apis/v1beta1"
 	"sigs.k8s.io/karpenter/pkg/operator"
 
 	alicache "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
@@ -37,6 +40,10 @@ import (
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/providers/vswitch"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/client"
 )
+
+func init() {
+	v1beta1.NormalizedLabels = lo.Assign(v1beta1.NormalizedLabels, map[string]string{"topology.diskplugin.csi.alibabacloud.com/zone": corev1.LabelTopologyZone})
+}
 
 // Operator is injected into the AliCloud CloudProvider's factories
 type Operator struct {
