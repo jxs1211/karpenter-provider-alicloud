@@ -36,6 +36,8 @@ import (
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1"
 )
 
+const defaultNodeLabel = "k8s.aliyun.com=true"
+
 type Provider interface {
 	GetNodeRegisterScript(context.Context, map[string]string, *v1alpha1.KubeletConfiguration) (string, error)
 	GetClusterCNI(context.Context) (string, error)
@@ -134,7 +136,7 @@ func (p *DefaultProvider) resolveUserData(respStr string,
 
 	// TODO: now, the following code is quite ugly, make it clean in the future
 	// Add labels
-	labelsFormated := fmt.Sprintf("ack.aliyun.com=%s", p.clusterID)
+	labelsFormated := fmt.Sprintf("%s,ack.aliyun.com=%s", defaultNodeLabel, p.clusterID)
 	for labelKey, labelValue := range labels {
 		labelsFormated = fmt.Sprintf("%s,%s=%s", labelsFormated, labelKey, labelValue)
 	}
