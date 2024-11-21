@@ -25,7 +25,7 @@ import (
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/karpenter/pkg/apis/v1beta1"
+	v1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/operator"
 
 	alicache "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/cache"
@@ -42,7 +42,7 @@ import (
 )
 
 func init() {
-	v1beta1.NormalizedLabels = lo.Assign(v1beta1.NormalizedLabels, map[string]string{"topology.diskplugin.csi.alibabacloud.com/zone": corev1.LabelTopologyZone})
+	v1.NormalizedLabels = lo.Assign(v1.NormalizedLabels, map[string]string{"topology.diskplugin.csi.alibabacloud.com/zone": corev1.LabelTopologyZone})
 }
 
 // Operator is injected into the AliCloud CloudProvider's factories
