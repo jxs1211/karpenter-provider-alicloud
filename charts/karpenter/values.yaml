@@ -73,4 +73,4 @@ controller:
     # will be batched separately.
     batchIdleDuration: 1s
     # Enable telemetry sharing
-    telemetryShare: "true"
+    telemetryShare: true
