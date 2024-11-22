@@ -502,8 +502,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 	}
 
 	kubeletCfg := resolveKubeletConfiguration(nodeClass)
-	labels := lo.Assign(nodeClaim.Labels, map[string]string{karpv1.CapacityTypeLabelKey: capacityType})
-	userData, err := p.ackProvider.GetNodeRegisterScript(ctx, labels, kubeletCfg)
+	userData, err := p.ackProvider.GetNodeRegisterScript(ctx, capacityType, nodeClaim, kubeletCfg)
 	if err != nil {
 		log.FromContext(ctx).Error(err, "Failed to resolve user data for node")
 		return nil, err

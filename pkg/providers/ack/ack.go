@@ -30,6 +30,8 @@ import (
 	ackclient "github.com/alibabacloud-go/cs-20151215/v5/client"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/patrickmn/go-cache"
+	"github.com/samber/lo"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 
@@ -39,7 +41,7 @@ import (
 const defaultNodeLabel = "k8s.aliyun.com=true"
 
 type Provider interface {
-	GetNodeRegisterScript(context.Context, map[string]string, *v1alpha1.KubeletConfiguration) (string, error)
+	GetNodeRegisterScript(context.Context, string, *karpv1.NodeClaim, *v1alpha1.KubeletConfiguration) (string, error)
 	GetClusterCNI(context.Context) (string, error)
 	LivenessProbe(*http.Request) error
 }
@@ -104,10 +106,12 @@ func (p *DefaultProvider) GetClusterCNI(_ context.Context) (string, error) {
 }
 
 func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
-	labels map[string]string,
+	capacityType string,
+	nodeClaim *karpv1.NodeClaim,
 	kubeletCfg *v1alpha1.KubeletConfiguration) (string, error) {
+	labels := lo.Assign(nodeClaim.Labels, map[string]string{karpv1.CapacityTypeLabelKey: capacityType})
 	if cachedScript, ok := p.cache.Get(p.clusterID); ok {
-		return p.resolveUserData(cachedScript.(string), labels, kubeletCfg), nil
+		return p.resolveUserData(cachedScript.(string), labels, nodeClaim, kubeletCfg), nil
 	}
 
 	reqPara := &ackclient.DescribeClusterAttachScriptsRequest{
@@ -126,14 +130,14 @@ func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
 	}
 
 	p.cache.SetDefault(p.clusterID, s)
-	return p.resolveUserData(s, labels, kubeletCfg), nil
+	return p.resolveUserData(s, labels, nodeClaim, kubeletCfg), nil
 }
 
 func (p *DefaultProvider) resolveUserData(respStr string,
 	labels map[string]string,
+	nodeClaim *karpv1.NodeClaim,
 	kubeletCfg *v1alpha1.KubeletConfiguration) string {
 	cleanupStr := strings.ReplaceAll(respStr, "\r\n", "")
-
 	// TODO: now, the following code is quite ugly, make it clean in the future
 	// Add labels
 	labelsFormated := fmt.Sprintf("%s,ack.aliyun.com=%s", defaultNodeLabel, p.clusterID)
@@ -148,8 +152,19 @@ func (p *DefaultProvider) resolveUserData(respStr string,
 	updatedCommand = fmt.Sprintf("%s --node-config %s", updatedCommand, cfg)
 
 	// Add taints
-	taint := karpv1.UnregisteredNoExecuteTaint
-	updatedCommand = fmt.Sprintf("%s --taints %s", updatedCommand, taint.ToString())
+	taints := lo.Flatten([][]corev1.Taint{
+		nodeClaim.Spec.Taints,
+		nodeClaim.Spec.StartupTaints,
+	})
+	if !lo.ContainsBy(taints, func(t corev1.Taint) bool {
+		return t.MatchTaint(&karpv1.UnregisteredNoExecuteTaint)
+	}) {
+		taints = append(taints, karpv1.UnregisteredNoExecuteTaint)
+	}
+	updatedCommand = fmt.Sprintf("%s --taints %s",
+		updatedCommand, strings.Join(lo.Map(taints, func(t corev1.Taint, _ int) string {
+			return t.ToString()
+		}), ","))
 
 	// Add bash script header
 	finalScript := fmt.Sprintf("#!/bin/bash\n\n%s", updatedCommand)
