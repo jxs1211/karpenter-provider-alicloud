@@ -18,6 +18,8 @@ import (
 	"fmt"
 
 	"go.uber.org/multierr"
+
+	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/utils/client/metadata"
 )
 
 func (o *Options) Validate() error {
@@ -29,6 +31,15 @@ func (o *Options) Validate() error {
 func (o *Options) validateRequiredFields() error {
 	if o.ClusterID == "" {
 		return fmt.Errorf("missing field, cluster-id")
+	}
+	if o.RegionID == "" {
+		region, err := metadata.NewMetaData(nil).Region()
+		if err != nil {
+			return err
+		} else if region == "" {
+			return fmt.Errorf("missing field, region-id")
+		}
+		o.RegionID = region
 	}
 	return nil
 }

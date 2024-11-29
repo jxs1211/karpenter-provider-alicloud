@@ -17,30 +17,30 @@ limitations under the License.
 package client
 
 import (
-	"errors"
-
+	"context"
+	"fmt"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/v2/client"
 	"github.com/alibabacloud-go/tea/tea"
-	aliyunconfig "github.com/aliyun/aliyun-cli/config"
+	"github.com/aliyun/credentials-go/credentials"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func NewClientConfig() (*openapi.Config, error) {
-	profile, err := aliyunconfig.LoadCurrentProfile()
+func NewClientConfig(ctx context.Context, region string, network string) (*openapi.Config, error) {
+	// Load in the following order: 1. AK/SK, 2. RRSA, 3. config.json, 4. RAMRole
+	// https://www.alibabacloud.com/help/zh/sdk/developer-reference/v2-manage-go-access-credentials#3ca299f04bw3c
+	credential, err := credentials.NewCredential(nil)
 	if err != nil {
 		return nil, err
 	}
-
-	if profile.RegionId == "" {
-		return nil, errors.New("regionId must be set in the config file")
-	}
-
-	credentialClient, err := profile.GetCredential(nil, nil)
-	if err != nil {
-		return nil, err
+	if cred, err := credential.GetCredential(); err == nil && cred != nil {
+		log.FromContext(ctx).Info(fmt.Sprintf("using credential type: %s, AccessKeyID: %s", tea.StringValue(cred.Type), tea.StringValue(cred.AccessKeyId)))
+	} else {
+		return nil, fmt.Errorf("failed get credential, error: %w", err)
 	}
 
 	return &openapi.Config{
-		RegionId:   tea.String(profile.RegionId),
-		Credential: credentialClient,
+		RegionId:   tea.String(region),
+		Credential: credential,
+		Network:    tea.String(network), // 1. public, 2. vpc, default is public
 	}, nil
 }
