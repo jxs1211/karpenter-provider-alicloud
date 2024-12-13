@@ -3,7 +3,17 @@ entries:
   karpenter:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-11-22T10:55:30.015339+08:00"
+    created: "2024-12-13T17:35:32.917744+08:00"
+    description: A Helm chart for Kubernetes
+    digest: 666cfa537dc50ff73fd11726717e6e4c0f4a7f9c28d03a456183e272ca2ce392
+    name: karpenter
+    type: application
+    urls:
+    - karpenter-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2024-12-13T17:35:32.917119+08:00"
     description: A Helm chart for Kubernetes
     digest: 38936d516110324db4f79418b5f3d8c1745778f1bf5357c2f011a8953295ab39
     name: karpenter
@@ -13,7 +23,7 @@ entries:
     version: 0.1.0
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-11-22T10:55:30.014924+08:00"
+    created: "2024-12-13T17:35:32.916003+08:00"
     description: A Helm chart for Kubernetes
     digest: a611c779eb159afff8f4b889b57807f83ae921a4932666db814803c8966af76f
     name: karpenter
@@ -21,4 +31,4 @@ entries:
     urls:
     - karpenter-0.0.1.tgz
     version: 0.0.1
-generated: "2024-11-22T10:55:30.013984+08:00"
+generated: "2024-12-13T17:35:32.914561+08:00"
