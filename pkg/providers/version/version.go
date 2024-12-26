@@ -29,9 +29,9 @@ import (
 
 const (
 	kubernetesVersionCacheKey = "kubernetesVersion"
-	// MinK8sVersion defines the max K8s version which has tested on ack
+	// MinK8sVersion defines the min K8s version which has tested on ack
 	// Currently the min k8s version of ack is 1.28.1-aliyun.1
-	MinK8sVersion = "1.28.9"
+	MinK8sVersion = "1.28.1"
 	// MaxK8sVersion defines the max K8s version which has tested on ack
 	// Currently the max k8s version of ack is 1.31.1-aliyun.1
 	MaxK8sVersion = "1.31.1"
