@@ -46,9 +46,9 @@ We want your contributions and suggestions! One of the easiest ways to contribut
 
 * [Slack channel](https://kubernetes.slack.com/archives/C02SFFZSA2K)
 * [Community calls](https://calendar.google.com/calendar/u/0?cid=N3FmZGVvZjVoZWJkZjZpMnJrMmplZzVqYmtAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
-* WeChat Group: Broker wechat to add you into the user group.
+* WeChat Group: Scan and you will be invited to join
 
-  <img src="docs/images/wechat-broker.jpg" width="50%">
+  <img src="docs/images/wechat-group-alicloud-provider.png" width="50%">
 
 ## Attribution Notice
 
