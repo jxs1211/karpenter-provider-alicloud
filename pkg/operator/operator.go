@@ -61,7 +61,7 @@ type Operator struct {
 }
 
 func NewOperator(ctx context.Context, operator *operator.Operator) (context.Context, *Operator) {
-	clientConfig, err := client.NewClientConfig()
+	clientConfig, err := client.NewClientConfig(ctx, options.FromContext(ctx).RegionID, options.FromContext(ctx).AliNetwork)
 	if err != nil {
 		log.FromContext(ctx).Error(err, "Failed to create client config")
 		os.Exit(1)

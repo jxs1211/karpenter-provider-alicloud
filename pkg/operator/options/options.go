@@ -35,6 +35,8 @@ type optionsKey struct{}
 
 type Options struct {
 	ClusterID               string
+	RegionID                string
+	AliNetwork              string
 	VMMemoryOverheadPercent float64
 	Interruption            bool
 	TelemetryShare          bool
@@ -43,6 +45,8 @@ type Options struct {
 
 func (o *Options) AddFlags(fs *coreoptions.FlagSet) {
 	fs.StringVar(&o.ClusterID, "cluster-id", env.WithDefaultString("CLUSTER_ID", ""), "The external kubernetes cluster id for new nodes to connect with.")
+	fs.StringVar(&o.RegionID, "region-id", env.WithDefaultString("REGION_ID", ""), "Region of the kubernetes cluster. If not set, automatically obtain the host region.")
+	fs.StringVar(&o.AliNetwork, "alibaba-cloud-network", env.WithDefaultString("ALIBABA_CLOUD_NETWORK", ""), "Network type for AlibabaCloud endpoint. If not set, use public.")
 	// TODO: for different OS, the overhead is different, find a way to fix this.
 	fs.Float64Var(&o.VMMemoryOverheadPercent, "vm-memory-overhead-percent", utils.WithDefaultFloat64("VM_MEMORY_OVERHEAD_PERCENT", 0.065), "The VM memory overhead as a percent that will be subtracted from the total memory for all instance types.")
 	fs.BoolVar(&o.Interruption, "interruption", env.WithDefaultBool("INTERRUPTION", true), "Enable interruption handling.")

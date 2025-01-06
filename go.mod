@@ -9,7 +9,6 @@ require (
 	github.com/alibabacloud-go/tea v1.2.2
 	github.com/alibabacloud-go/tea-utils/v2 v2.0.6
 	github.com/alibabacloud-go/vpc-20160428/v6 v6.10.4
-	github.com/aliyun/aliyun-cli v0.0.0-20240925084117-158a70e275f0
 	github.com/awslabs/operatorpkg v0.0.0-20240805231134-67d0acfb6306
 	github.com/cloudpilot-ai/priceserver v0.0.0-20241011010411-15ac0e19a857
 	github.com/mitchellh/hashstructure/v2 v2.0.2
@@ -42,7 +41,7 @@ require (
 	github.com/alibabacloud-go/openapi-util v0.1.0 // indirect
 	github.com/alibabacloud-go/tea-utils v1.3.1 // indirect
 	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
-	github.com/aliyun/credentials-go v1.3.10 // indirect
+	github.com/aliyun/credentials-go v1.3.10
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
