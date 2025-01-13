@@ -36,6 +36,7 @@ podDisruptionBudget:
   minAvailable: 1
 
 controller:
+  nodeSelector: {}
   replicaCount: 2
   revisionHistoryLimit: 10
   strategy:
