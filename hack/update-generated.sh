@@ -2,8 +2,11 @@
 
 set -eu -o pipefail
 
+LOCALBIN=$(pwd)/bin
+CONTROLLER_GEN=${LOCALBIN}/controller-gen
+
 # Update CRD
-controller-gen crd paths=./pkg/apis/v1alpha1/... output:crd:dir=./charts/karpenter/crds
+${CONTROLLER_GEN} crd paths=./pkg/apis/v1alpha1/... output:crd:dir=./charts/karpenter/crds
 
 # Update generated code
 export REPO_ROOT=$(pwd)
@@ -22,8 +25,3 @@ mkdir -p "${GO_PKG_DIR}"
 if [[ ! -e "${GO_PKG_DIR}" || "$(readlink "${GO_PKG_DIR}")" != "${REPO_ROOT}" ]]; then
   ln -snf "${REPO_ROOT}" "${GO_PKG_DIR}"
 fi
-
-deepcopy-gen \
-  --go-header-file hack/boilerplate.go.txt \
-  --output-file-base zz_generated.deepcopy \
-  --input-dirs github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/apis/v1alpha1
