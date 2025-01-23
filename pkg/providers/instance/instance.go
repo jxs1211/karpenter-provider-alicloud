@@ -545,7 +545,7 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 			UserData:                   tea.String(userData),
 			ResourceGroupId:            tea.String(nodeClass.Spec.ResourceGroupID),
 			SecurityGroupIds:           securityGroupIDs,
-			SystemDiskSize:             systemDisk.Size,
+			SystemDiskSize:             tea.Int32(int32(systemDisk.Size.Value())),
 			SystemDiskPerformanceLevel: systemDisk.PerformanceLevel,
 			Tag:                        reqTags,
 		},

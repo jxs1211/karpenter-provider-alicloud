@@ -333,10 +333,10 @@ func getCPUModel(cpuName string) string {
 
 func ephemeralStorage(systemDisk *v1alpha1.SystemDisk) *resource.Quantity {
 	if systemDisk == nil {
-		return resources.Quantity(fmt.Sprintf("%dG", *imagefamily.DefaultSystemDisk.Size))
+		return imagefamily.DefaultSystemDisk.Size
 	}
 
-	return resources.Quantity(fmt.Sprintf("%dG", *systemDisk.Size))
+	return systemDisk.Size
 }
 
 func privateIPv4Address(info *ecsclient.DescribeInstanceTypesResponseBodyInstanceTypesInstanceType) *resource.Quantity {

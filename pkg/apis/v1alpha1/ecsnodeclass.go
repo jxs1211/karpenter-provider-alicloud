@@ -21,6 +21,7 @@ import (
 
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/samber/lo"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -211,14 +212,24 @@ type SystemDisk struct {
 	// +kubebuilder:validation:Items=Enum=cloud;cloud_efficiency;cloud_ssd;cloud_essd;cloud_auto;cloud_essd_entry
 	// +optional
 	Categories []string `json:"categories,omitempty"`
-	// The size of the system disk. Unit: GiB.
-	// Valid values:
-	//   * If you set Category to cloud: 20 to 500.
-	//   * If you set Category to other disk categories: 20 to 2048.
+	// Size in `Gi`, `G`, `Ti`, or `T`. You must specify either a snapshot ID or
+	// a volume size. The following are the supported volumes sizes for each volume
+	// type:
 	//
-	// +kubebuilder:validation:XValidation:message="size invalid",rule="self >= 20"
+	//    * gp2 and gp3: 1-16,384
+	//
+	//    * io1 and io2: 4-16,384
+	//
+	//    * st1 and sc1: 125-16,384
+	//
+	//    * standard: 1-1,024
+	// + TODO: Add the CEL resources.quantity type after k8s 1.29
+	// + https://github.com/kubernetes/apiserver/commit/b137c256373aec1c5d5810afbabb8932a19ecd2a#diff-838176caa5882465c9d6061febd456397a3e2b40fb423ed36f0cabb1847ecb4dR190
+	// +kubebuilder:validation:Pattern:="^((?:[1-9][0-9]{0,3}|[1-4][0-9]{4}|[5][0-8][0-9]{3}|59000)Gi|(?:[1-9][0-9]{0,3}|[1-5][0-9]{4}|[6][0-3][0-9]{3}|64000)G|([1-9]||[1-5][0-7]|58)Ti|([1-9]||[1-5][0-9]|6[0-3]|64)T)$"
+	// +kubebuilder:validation:Schemaless
+	// +kubebuilder:validation:Type:=string
 	// +optional
-	Size *int32 `json:"size,omitempty"`
+	Size *resource.Quantity `json:"size,omitempty" hash:"string"`
 	// The performance level of the ESSD to use as the system disk. Default value: PL0.
 	// Valid values:
 	//   * PL0: A single ESSD can deliver up to 10,000 random read/write IOPS.

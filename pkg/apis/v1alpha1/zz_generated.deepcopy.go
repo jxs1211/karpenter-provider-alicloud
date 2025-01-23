@@ -345,8 +345,8 @@ func (in *SystemDisk) DeepCopyInto(out *SystemDisk) {
 	}
 	if in.Size != nil {
 		in, out := &in.Size, &out.Size
-		*out = new(int32)
-		**out = **in
+		x := (*in).DeepCopy()
+		*out = &x
 	}
 	if in.PerformanceLevel != nil {
 		in, out := &in.PerformanceLevel, &out.PerformanceLevel
