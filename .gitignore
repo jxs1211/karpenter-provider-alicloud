@@ -14,3 +14,10 @@ go.work.sum
 
 # Project Specific
 *.csv
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+/bin
