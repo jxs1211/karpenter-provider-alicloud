@@ -17,22 +17,16 @@ jobs:
           go-version: '1.23'
           cache: false
 
-      - name: Config env
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_AK }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SK }}" >> $GITHUB_ENV
-          echo "AWS_DEFAULT_REGION=us-east-2" >> $GITHUB_ENV
-
-      - name: AWS CLI Init
-        uses: unfor19/install-aws-cli-action@v1
-
-      - name: Config ECR
-        run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/cloudpilotai
+      - name: Config ACR
+        uses: docker/login-action@v3
+        with:
+          registry: cloudpilotai-registry.cn-hangzhou.cr.aliyuncs.com
+          username: ${{ secrets.ALIBABACLOUD_USERNAME }}
+          password: ${{ secrets.ALIBABACLOUD_PASSWORD }}
 
       - uses: ko-build/setup-ko@v0.6
 
       - name: build and publish image
         run: |
-          export KO_DOCKER_REPO=public.ecr.aws/cloudpilotai/alibabacloud/karpenter
+          export KO_DOCKER_REPO=cloudpilotai-registry.cn-hangzhou.cr.aliyuncs.com/cloudpilotai/karpenter-provider-alibabacloud
           ko build --bare github.com/cloudpilot-ai/karpenter-provider-alibabacloud/cmd/controller
