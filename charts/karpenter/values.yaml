@@ -43,7 +43,7 @@ controller:
     rollingUpdate:
       maxUnavailable: 1
   image:
-    repository: "public.ecr.aws/cloudpilotai/alibabacloud/karpenter"
+    repository: "cloudpilotai-registry.cn-hangzhou.cr.aliyuncs.com/cloudpilotai/karpenter-provider-alibabacloud"
     tag: "latest"
     pullPolicy: IfNotPresent
   priorityClassName: system-cluster-critical
