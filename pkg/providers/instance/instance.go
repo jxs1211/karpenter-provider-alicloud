@@ -407,7 +407,7 @@ func createAutoProvisioningGroupResponseHandler(resp *ecsclient.CreateAutoProvis
 
 	launchResults := resp.Body.LaunchResults.LaunchResult
 	if len(launchResults) == 0 {
-		return fmt.Errorf("no launch results found in response: %s", tea.Prettify(resp))
+		return fmt.Errorf("no launch results found in response: %s", tea.Prettify(resp.Body.String()))
 	}
 
 	launchResult := launchResults[0]
