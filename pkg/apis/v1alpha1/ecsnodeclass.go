@@ -209,6 +209,7 @@ type SystemDisk struct {
 	// Different ECS is compatible with different disk category, using array to maximize ECS creation success.
 	// Valid values:"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd", "cloud_auto", and "cloud_essd_entry"
 	// +kubebuilder:validation:Items=Enum=cloud;cloud_efficiency;cloud_ssd;cloud_essd;cloud_auto;cloud_essd_entry
+	// +kubebuilder:default:={"cloud","cloud_efficiency","cloud_ssd","cloud_essd","cloud_auto","cloud_essd_entry"}
 	// +optional
 	Categories []string `json:"categories,omitempty"`
 	// The size of the system disk. Unit: GiB.
@@ -217,6 +218,7 @@ type SystemDisk struct {
 	//   * If you set Category to other disk categories: 20 to 2048.
 	//
 	// +kubebuilder:validation:XValidation:message="size invalid",rule="self >= 20"
+	// +kubebuilder:default:=20
 	// +optional
 	Size *int32 `json:"size,omitempty"`
 	// The performance level of the ESSD to use as the system disk. Default value: PL0.
