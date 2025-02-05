@@ -262,6 +262,13 @@ spec:
                 description: SystemDisk to be applied to provisioned nodes.
                 properties:
                   categories:
+                    default:
+                    - cloud
+                    - cloud_efficiency
+                    - cloud_ssd
+                    - cloud_essd
+                    - cloud_auto
+                    - cloud_essd_entry
                     description: |-
                       The category of the system disk (for example, cloud and cloud_ssd).
                       Different ECS is compatible with different disk category, using array to maximize ECS creation success.
@@ -286,6 +293,7 @@ spec:
                     - PL3
                     type: string
                   size:
+                    default: 20
                     description: |-
                       The size of the system disk. Unit: GiB.
                       Valid values:
