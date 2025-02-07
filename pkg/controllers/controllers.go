@@ -34,6 +34,7 @@ import (
 	nodeclasshash "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/nodeclass/hash"
 	nodeclaasstatus "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/nodeclass/status"
 	nodeclasstermination "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/nodeclass/termination"
+	nodeclassvolumesize "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/nodeclass/volumesize"
 	providersinstancetype "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/providers/instancetype"
 	controllerspricing "github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/providers/pricing"
 	"github.com/cloudpilot-ai/karpenter-provider-alibabacloud/pkg/controllers/telemetry"
@@ -57,6 +58,7 @@ func NewControllers(ctx context.Context, mgr manager.Manager, clk clock.Clock, r
 
 	controllers := []controller.Controller{
 		nodeclasshash.NewController(kubeClient),
+		nodeclassvolumesize.NewController(kubeClient),
 		nodeclaasstatus.NewController(kubeClient, vSwitchProvider, securityGroupProvider, imageProvider),
 		nodeclasstermination.NewController(kubeClient, recorder),
 		controllerspricing.NewController(pricingProvider),

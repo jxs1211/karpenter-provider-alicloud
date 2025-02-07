@@ -343,10 +343,15 @@ func (in *SystemDisk) DeepCopyInto(out *SystemDisk) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.Size != nil {
-		in, out := &in.Size, &out.Size
+	if in.VolumeSize != nil {
+		in, out := &in.VolumeSize, &out.VolumeSize
 		x := (*in).DeepCopy()
 		*out = &x
+	}
+	if in.Size != nil {
+		in, out := &in.Size, &out.Size
+		*out = new(int32)
+		**out = **in
 	}
 	if in.PerformanceLevel != nil {
 		in, out := &in.PerformanceLevel, &out.PerformanceLevel

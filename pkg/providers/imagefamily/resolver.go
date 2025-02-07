@@ -25,9 +25,7 @@ import (
 	util "github.com/alibabacloud-go/tea-utils/v2/service"
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/patrickmn/go-cache"
-	"github.com/samber/lo"
 	"go.uber.org/multierr"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,7 +38,7 @@ import (
 var DefaultSystemDisk = v1alpha1.SystemDisk{
 	// TODO: Change me, comprehensive ranking based on the pricing
 	Categories: []string{"cloud", "cloud_ssd", "cloud_efficiency", "cloud_essd", "cloud_auto", "cloud_essd_entry"},
-	Size:       lo.ToPtr(resource.MustParse("20Gi")),
+	Size:       tea.Int32(20),
 }
 
 // Options define the static launch template parameters

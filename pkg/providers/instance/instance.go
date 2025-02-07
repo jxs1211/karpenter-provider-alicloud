@@ -407,7 +407,7 @@ func createAutoProvisioningGroupResponseHandler(resp *ecsclient.CreateAutoProvis
 
 	launchResults := resp.Body.LaunchResults.LaunchResult
 	if len(launchResults) == 0 {
-		return fmt.Errorf("no launch results found in response: %s", tea.Prettify(resp))
+		return fmt.Errorf("no launch results found in response: %s", tea.Prettify(resp.Body.String()))
 	}
 
 	launchResult := launchResults[0]
@@ -541,13 +541,12 @@ func (p *DefaultProvider) getProvisioningGroup(ctx context.Context, nodeClass *v
 		AutoProvisioningGroupType:       tea.String("instant"),
 		LaunchConfiguration: &ecsclient.CreateAutoProvisioningGroupRequestLaunchConfiguration{
 			// TODO: we should set image id for each instance types after alibabacloud supports
-			ImageId:                    tea.String(imageID),
-			UserData:                   tea.String(userData),
-			ResourceGroupId:            tea.String(nodeClass.Spec.ResourceGroupID),
-			SecurityGroupIds:           securityGroupIDs,
-			SystemDiskSize:             tea.Int32(int32(systemDisk.Size.Value())),
-			SystemDiskPerformanceLevel: systemDisk.PerformanceLevel,
-			Tag:                        reqTags,
+			ImageId:          tea.String(imageID),
+			UserData:         tea.String(userData),
+			ResourceGroupId:  tea.String(nodeClass.Spec.ResourceGroupID),
+			SecurityGroupIds: securityGroupIDs,
+			SystemDiskSize:   systemDisk.Size,
+			Tag:              reqTags,
 		},
 		// Add this tag to auto-provisioning-group, alibabacloud will monitor the requests and enhance the stability
 		Tag: []*ecsclient.CreateAutoProvisioningGroupRequestTag{

@@ -210,6 +210,7 @@ type SystemDisk struct {
 	// Different ECS is compatible with different disk category, using array to maximize ECS creation success.
 	// Valid values:"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd", "cloud_auto", and "cloud_essd_entry"
 	// +kubebuilder:validation:Items=Enum=cloud;cloud_efficiency;cloud_ssd;cloud_essd;cloud_auto;cloud_essd_entry
+	// +kubebuilder:default:={"cloud","cloud_efficiency","cloud_ssd","cloud_essd","cloud_auto","cloud_essd_entry"}
 	// +optional
 	Categories []string `json:"categories,omitempty"`
 	// Size in `Gi`, `G`, `Ti`, or `T`. You must specify either a snapshot ID or
@@ -229,7 +230,16 @@ type SystemDisk struct {
 	// +kubebuilder:validation:Schemaless
 	// +kubebuilder:validation:Type:=string
 	// +optional
-	Size *resource.Quantity `json:"size,omitempty" hash:"string"`
+	VolumeSize *resource.Quantity `json:"volumeSize,omitempty" hash:"string"`
+	// The size of the system disk. Unit: GiB.
+	// Valid values:
+	//   * If you set Category to cloud: 20 to 500.
+	//   * If you set Category to other disk categories: 20 to 2048.
+	//
+	// +kubebuilder:validation:XValidation:message="size invalid",rule="self >= 20"
+	// +kubebuilder:default:=20
+	// +optional
+	Size *int32 `json:"size,omitempty"`
 	// The performance level of the ESSD to use as the system disk. Default value: PL0.
 	// Valid values:
 	//   * PL0: A single ESSD can deliver up to 10,000 random read/write IOPS.
