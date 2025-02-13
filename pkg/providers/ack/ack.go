@@ -17,13 +17,13 @@ limitations under the License.
 package ack
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 
@@ -133,25 +133,33 @@ func (p *DefaultProvider) GetNodeRegisterScript(ctx context.Context,
 	return p.resolveUserData(s, labels, nodeClaim, kubeletCfg), nil
 }
 
-func (p *DefaultProvider) resolveUserData(respStr string,
-	labels map[string]string,
-	nodeClaim *karpv1.NodeClaim,
-	kubeletCfg *v1alpha1.KubeletConfiguration) string {
+func (p *DefaultProvider) resolveUserData(respStr string, labels map[string]string, nodeClaim *karpv1.NodeClaim, kubeletCfg *v1alpha1.KubeletConfiguration) string {
+	var script bytes.Buffer
+	// Add bash script header
+	script.WriteString("#!/bin/bash\n\n")
+	// Clean up the input string
 	cleanupStr := strings.ReplaceAll(respStr, "\r\n", "")
-	// TODO: now, the following code is quite ugly, make it clean in the future
+	script.WriteString(cleanupStr + " ")
 	// Add labels
-	labelsFormated := fmt.Sprintf("%s,ack.aliyun.com=%s", defaultNodeLabel, p.clusterID)
-	for labelKey, labelValue := range labels {
-		labelsFormated = fmt.Sprintf("%s,%s=%s", labelsFormated, labelKey, labelValue)
-	}
-	re := regexp.MustCompile(`--labels\s+\S+`)
-	updatedCommand := re.ReplaceAllString(cleanupStr, "--labels "+labelsFormated)
-
+	script.WriteString(fmt.Sprintf("--labels %s ", p.formatLabels(labels)))
 	// Add kubelet config
 	cfg := convertNodeClassKubeletConfigToACKNodeConfig(kubeletCfg)
-	updatedCommand = fmt.Sprintf("%s --node-config %s", updatedCommand, cfg)
-
+	script.WriteString(fmt.Sprintf("--node-config %s ", cfg))
 	// Add taints
+	script.WriteString(fmt.Sprintf("--taints %s", p.formatTaints(nodeClaim)))
+	// Encode to base64
+	return base64.StdEncoding.EncodeToString(script.Bytes())
+}
+
+func (p *DefaultProvider) formatLabels(labels map[string]string) string {
+	labelsFormatted := fmt.Sprintf("%s,ack.aliyun.com=%s", defaultNodeLabel, p.clusterID)
+	for key, value := range labels {
+		labelsFormatted = fmt.Sprintf("%s,%s=%s", labelsFormatted, key, value)
+	}
+	return labelsFormatted
+}
+
+func (p *DefaultProvider) formatTaints(nodeClaim *karpv1.NodeClaim) string {
 	taints := lo.Flatten([][]corev1.Taint{
 		nodeClaim.Spec.Taints,
 		nodeClaim.Spec.StartupTaints,
@@ -161,15 +169,9 @@ func (p *DefaultProvider) resolveUserData(respStr string,
 	}) {
 		taints = append(taints, karpv1.UnregisteredNoExecuteTaint)
 	}
-	updatedCommand = fmt.Sprintf("%s --taints %s",
-		updatedCommand, strings.Join(lo.Map(taints, func(t corev1.Taint, _ int) string {
-			return t.ToString()
-		}), ","))
-
-	// Add bash script header
-	finalScript := fmt.Sprintf("#!/bin/bash\n\n%s", updatedCommand)
-
-	return base64.StdEncoding.EncodeToString([]byte(finalScript))
+	return strings.Join(lo.Map(taints, func(t corev1.Taint, _ int) string {
+		return t.ToString()
+	}), ",")
 }
 
 type NodeConfig struct {
