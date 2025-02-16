@@ -30,7 +30,6 @@ import (
 	"github.com/samber/lo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	karpv1 "sigs.k8s.io/karpenter/pkg/apis/v1"
 	"sigs.k8s.io/karpenter/pkg/cloudprovider"
@@ -53,7 +52,6 @@ type Provider interface {
 
 type DefaultProvider struct {
 	region          string
-	kubeClient      client.Client
 	ecsClient       *ecsclient.Client
 	pricingProvider pricing.Provider
 	ackProvider     ack.Provider
@@ -80,11 +78,10 @@ type DefaultProvider struct {
 	instanceTypesOfferingsSeqNum uint64
 }
 
-func NewDefaultProvider(region string, kubeClient client.Client, ecsClient *ecsclient.Client,
+func NewDefaultProvider(region string, ecsClient *ecsclient.Client,
 	instanceTypesCache *cache.Cache, unavailableOfferingsCache *kcache.UnavailableOfferings,
 	pricingProvider pricing.Provider, ackProvider ack.Provider) *DefaultProvider {
 	return &DefaultProvider{
-		kubeClient:                 kubeClient,
 		ecsClient:                  ecsClient,
 		region:                     region,
 		pricingProvider:            pricingProvider,
