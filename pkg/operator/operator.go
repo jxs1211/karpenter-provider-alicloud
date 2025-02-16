@@ -108,7 +108,7 @@ func NewOperator(ctx context.Context, operator *operator.Operator) (context.Cont
 
 	unavailableOfferingsCache := alicache.NewUnavailableOfferings()
 	instanceTypeProvider := instancetype.NewDefaultProvider(
-		*ecsClient.RegionId, operator.GetClient(), ecsClient,
+		*ecsClient.RegionId, ecsClient,
 		cache.New(alicache.InstanceTypesAndZonesTTL, alicache.DefaultCleanupInterval),
 		unavailableOfferingsCache,
 		pricingProvider, ackProvider)
